@@ -32,6 +32,8 @@ jobs:
       - run: npm test
 
       - save_cache:
+          paths:
+            - ~/repo
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
 
   deploy:
