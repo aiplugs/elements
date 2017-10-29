@@ -1,0 +1,255 @@
+<template id="aiplugs-tag-input-style">
+  <style>
+    input {
+      border-radius: 4px;
+      border: 1px solid var(--color-text-secondary);
+      padding: 12px;
+      outline: none;
+      width: 96px;
+      color: var(--color-text-secondary);
+      background: var(--color-bg-primary);
+    }
+    input:focus {
+      border-color: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+    input:invalid {
+      border-color: var(--color-error);
+    }
+  </style>
+</template>
+<template id="aiplugs-tag">
+  <style>
+      label {
+          display: inline-block;
+          margin: 6px;
+          padding: 8px 8px 8px 12px;
+          border: 1px solid var(--color-primary);
+          border-radius: 24px;
+          font-size: 16px;
+          color: var(--color-primary);
+          transition: all linear .25s;
+      }
+      label .close {
+          transition: all linear .25s;
+          color: var(--color-secondary);
+      }
+      label:hover {
+          color: var(--color-secondary);
+      }
+      label:hover .close {
+          color: var(--color-accent);
+      }
+  </style>
+  <label>
+      <slot></slot>
+      <input type="hidden" name="" value="" />
+      <span class="close">&times;</span>
+  </label>
+</template>
+<template id="aiplugs-tag-input">
+  <slot></slot><input style="max-width:96px;" />
+</template>
+<template id="aiplugs-tag-autocomplete">
+  <style>
+    input:disabled {
+      display:none;
+    }
+  </style>
+  <slot></slot>
+  <input list="suggestion">
+  <datalist id="suggestion"></datalist>
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    class XTag extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        const input = shadow.querySelector('input');
+        const close = shadow.querySelector('.close')
+
+        close.addEventListener('click', e => {
+          const evt = new Event('remove', { cancelable: true });
+          const result = this.dispatchEvent(evt);
+          if (result === true) {
+            this.remove()
+          }
+        });
+
+        this.el = { input };
+      }
+      static get observedAttributes () {
+        return ['name', 'value']
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (oldVal === newVal)
+          return;
+        
+        if (attrName === 'name') {
+          this.name = newVal;
+        }
+        else if (attrName === 'value') {
+          this.value = newVal;
+        }
+        
+      }
+      get value() {
+        return this.el.input.value
+      }
+      set value(value) {
+        this.setAttribute('value', value);
+        return this.el.input.value = value;
+      }
+      get name() {
+        return this.el.input.name;
+      }
+      set name(name) {
+        this.setAttribute('name', name);
+        this.el.input.name = name;
+      }
+    }
+    window.customElements.define('aiplugs-tag', XTag);
+    
+    class XTagInput extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag-input').content;
+        const style = tree.getElementById('aiplugs-tag-input-style').content;
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.appendChild(style.cloneNode(true));
+        shadow.appendChild(template.cloneNode(true));
+        
+        const input = shadow.querySelector('input');
+        const tags = shadow.querySelector('slot');
+
+        input.addEventListener('keydown', e => {
+          if (e.which === 13 || e.key == ',') {
+            this.add(e.target.value);
+            e.preventDefault();
+          }
+        });
+        input.addEventListener('blur', e => {
+          this.add(e.target.value);
+        });
+
+        this.el = { input, tags };
+      }
+
+      add(value) {
+        const tags = [...this.querySelectorAll(`aiplugs-tag`)];
+        const already = tags.find(tag => tag.value.toLowerCase() == value.toLowerCase());
+
+        if (already) {
+          this.el.input.pattern = `^(?!${tags.map(t => `^${t.value}$`).join('|')})(.+)$`;
+          return
+        }
+
+        const tag = new XTag();
+        tag.name = this.getAttribute('name') || '';
+        tag.value = value;
+        tag.innerText = value;
+        this.appendChild(tag);
+        this.el.input.value = '';
+      }
+    }
+    window.customElements.define('aiplugs-tag-input', XTagInput);
+
+    class XAutoComplete extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag-autocomplete').content;
+        const style = tree.getElementById('aiplugs-tag-input-style').content;
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.appendChild(style.cloneNode(true));
+        shadow.appendChild(template.cloneNode(true));
+
+        const input = shadow.querySelector('input');
+        const suggestion = shadow.querySelector('datalist');
+
+        let timeout;
+        let text;
+        input.addEventListener('keyup', e => {
+          const value = e.target.value;
+          if (value !== text) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+              this.dispatchEvent(new CustomEvent('change', { detail: value }));
+            }, 500);
+          }
+        });
+        input.addEventListener('keydown', e => {
+          text = e.target.value;
+          if (e.which === 13) {
+            this._onSelect(true);
+            e.preventDefault();
+          }
+        })
+        input.addEventListener('input', e => {
+          this._onSelect(false);
+        })
+
+        this.el = { input, suggestion };
+      }
+      static get observedAttributes () {
+        return ['name', 'multiple']
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+      }
+      set suggestion(items) {
+        this.el.suggestion.innerHTML = items.map(d => `<option value="${d.value}" label="${d.text||''}"/>`).join('');
+      }
+      get multiple() {
+        return this.hasAttribute('multiple');
+      }
+      set multiple(isMultiple) {
+        if (isMultiple)
+          this.setAttributeNode(document.createAttribute("multiple"));
+        else
+          this.removeAttribute('multiple');
+      }
+      _selected() {
+        return this.el.suggestion.querySelector(`option[value="${this.el.input.value}"]`);
+      }
+      _contains(value) {
+        return this.querySelector(`aiplugs-tag[value="${value}"]`);
+      }
+      _onSelect(enter) {
+        const selected = this._selected();
+        if (!selected)
+            return;
+
+        if (this._contains(selected.value))
+          return;
+
+        if (!this.multiple && this.querySelector('aiplugs-tag'))
+            return;
+
+        this.add(selected.label, selected.value);
+
+        this.el.input.value = '';
+        this.el.suggestion.innerHTML = '';
+
+        if (!this.multiple) {
+          this.el.input.disabled = true;
+        }
+      }
+      add(label, value) {
+        const tag = new XTag();
+        tag.name = this.getAttribute('name') || '';
+        tag.value = value;
+        tag.innerText = label || value;
+
+        tag.addEventListener('remove', e => {
+          this.el.input.disabled = false;
+        })
+        this.appendChild(tag);
+      }
+    }
+    window.customElements.define('aiplugs-autocomplete', XAutoComplete);
+  }())
+</script>

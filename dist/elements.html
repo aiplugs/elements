@@ -1,0 +1,1776 @@
+<template id="aiplugs-actions">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      background: var(--color-bg-primary);
+      padding: 12px;
+    }
+
+    ::slotted(.full) {
+      width: 100%;
+    }
+
+    ::slotted(.space) {
+      flex: 1;
+    }
+  </style>
+  <slot></slot>
+</template>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    class Actions extends HTMLElement {
+      static get observedAttributes() {
+        return ["items"];
+      }
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-actions').content;
+        this.attachShadow({mode:'open'}).appendChild(template.cloneNode(true));
+      }
+      connectedCallback() {
+        this._update(0);
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        this._update(+newVal);
+      }
+      _update(items) {
+        this.querySelectorAll('.any').forEach(el => {
+          el.disabled = items <= 0;
+        });
+        this.querySelectorAll('.one').forEach(el => {
+          el.disabled = items != 1;
+        });
+      }
+    }
+    window.customElements.define('aiplugs-actions', Actions);
+  }())
+</script><template id="aiplugs-array">
+  <style>
+    aiplugs-array {
+      display: block;
+      padding-left: 12px;
+    }
+    aiplugs-array > .container {
+      border-left: 1px solid var(--color-primary);
+    }
+    aiplugs-array > button {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 22px;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;      
+      margin-left: -12px;
+      padding: 0;
+      outline: 0;
+      box-shadow: none;
+      background-image: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    aiplugs-array > button:focus, 
+    aiplugs-array > button:active,
+    aiplugs-array > button:hover {
+      color: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+    aiplugs-array > button:disabled {
+      border-color: var(--color-secondary);
+      color: var(--color-secondary);
+    }
+    aiplugs-array > .container > aiplugs-array-item {
+      padding-left: 24px;
+      margin-top: 12px;
+      display: block;
+    }
+    aiplugs-array > .container > aiplugs-array-item > .close {
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      text-align: center;
+      float: left;
+      width: 12px;
+      height:12px;
+      font-size: 24px;
+      line-height: 12px;
+      margin-left: -31.2px;
+      background: var(--color-base);
+      color: transparent;
+      border: 1px solid var(--color-primary);
+      border-radius: 50%;
+      transition: all linear .25s;
+    }
+    aiplugs-array > .container > aiplugs-array-item > .close ~ * {
+      transition: all linear .25s;
+    } 
+    aiplugs-array > .container > aiplugs-array-item > .close:hover {
+      color: var(--color-primary-dark);
+      color: var(--color-primary);
+      border-style:none;
+    }
+    aiplugs-array > .container > aiplugs-array-item > .close:hover ~ * {
+      opacity: 0.3;
+    } 
+    aiplugs-array > .unremovable > aiplugs-array-item > .close {
+      display:none;
+    }
+  </style>
+  <div class="container"></div>
+  <button type="button">+</button>
+</template>
+
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    class XArray extends HTMLElement {
+      constructor() {
+        super();
+      }
+      connectedCallback() {
+        const template = tree.getElementById('aiplugs-array').content;
+
+        this.appendChild(template.cloneNode(true));
+
+        const container = this.querySelector('.container');
+        const addBtn = this.querySelector('button');
+        const itemTemplate = this.querySelector('template');
+
+        addBtn.addEventListener('click', e => { 
+          this._add(); 
+          this._update();
+        });
+
+        setTimeout(() => {
+          this._init();
+        }, 0);
+        
+        this.el = { container, addBtn, itemTemplate };        
+      }
+      _init () {
+        this._indexer = this._createIndexer();
+        for (let item of this.querySelectorAll('aiplugs-array-item')) {
+          this.el.container.appendChild(this._createItem(item));
+        }
+        for (let i = this.min - this.items.length; i > 0; i--) {
+          this._add();
+        }
+        if (this.max != 0 && this.items.length == 0) {
+          this._add();
+        }
+        this._update();
+      }
+      
+      get itemTemplate () {
+        return this.querySelector('template');
+      }
+
+      get min() {
+        const min =  parseInt(this.getAttribute('min')) || 0;
+        
+        if (min < 0)
+          return 0;
+
+        return min;
+      }
+      
+      get max() {
+        const max = parseInt(this.getAttribute('max'));
+        if (isNaN(max))
+          return '*';
+        
+        if (max < 0)
+          return 0;
+
+        return max;
+      }
+      get items() {
+        return this.el.container.querySelectorAll(':scope > aiplugs-array-item');
+      }
+      _createIndexer() {
+        let index = parseInt(this.getAttribute('index'));
+        return function() { return index++; }
+      }
+      _canAdd() {
+        if (!this.itemTemplate)
+          return false;
+
+        if (!this.itemTemplate.content)
+          return false;
+
+        if (this.max == '*')
+          return true;
+
+        if (this.items.length >= this.max)
+          return false;
+
+        return true;
+      }
+      _createItem(item) {
+        if (!item) {
+          const template = document.createElement('template');
+          template.innerHTML = this.itemTemplate.innerHTML.replace(/{{index}}/g, this._indexer());
+          item = new XArrayItem();
+          item.appendChild(template.content.cloneNode(true));
+        }
+        const rm = document.createElement('a');
+        rm.classList.add('close');
+        rm.innerHTML = '&times;';
+        rm.addEventListener('click', e => {
+          item.remove();
+          requestIdleCallback(() => {
+            this._update();
+          })
+        });
+        item.insertBefore(rm, item.firstChild);
+        return item;
+      }
+      _add() {
+        if (this._canAdd()) {
+          const item = this._createItem();
+          this.el.container.appendChild(item);
+        }
+      }
+      _update() {
+        const items = this.items.length;
+        if (items >= this.max) {
+          this.el.addBtn.setAttribute('disabled', '');
+        }
+        else {
+          this.el.addBtn.removeAttribute('disabled');
+        }
+
+        if (this.min != this.max && items > this.min) {
+          this.el.container.classList.remove('unremovable');
+        }
+        else {
+          this.el.container.classList.add('unremovable');
+        }
+      }
+    }
+    window.customElements.define('aiplugs-array', XArray);
+
+    class XArrayItem extends HTMLElement {
+      constructor() {
+        super();
+      }
+    }
+    window.customElements.define('aiplugs-array-item', XArrayItem);
+  }())
+</script><template id="aiplugs-breadcrumb">
+  <style>
+    ul {
+      display: flex;
+      flex-direction: row;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      line-height: 24px;
+      padding: 12px 24px;
+      background: var(--color-mono-light);
+    }
+
+    li {
+      display: inline-block;
+      cursor: pointer;
+      color: var(--color-secondary-text);
+    }
+
+    li:hover {
+      color: var(--color-primary);
+    }
+
+    li::after {
+      content: '/';
+      padding: 0 8px;
+      color: var(--color-secondary-text);
+    }
+
+    li:last-child::after {
+      content: '';
+    }
+
+    li:first-child::after {
+      content: '/';
+    }
+
+    li:first-child::before {
+      font-family: var(--icon-font-family);
+      content: var(--icon-home, 'HOME');
+    }
+  </style>
+  <ul></ul>
+</template>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    class Breadcrumb extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-breadcrumb').content;
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.appendChild(template.cloneNode(true));
+        this.el = {
+          path: shadow.querySelector('ul')
+        };
+        this._path = [];
+        this._update();
+      }
+      _update() {
+        const template = (['', ...this._path]).map((name, i) => `<li data-index='${i}'>${name}</li>`).join('');
+        this.el.path.innerHTML = template;
+        this.el.path.querySelectorAll('li').forEach(item => {
+          item.addEventListener('click', e => this._onClick(e));
+        });
+      }
+      _onClick(e) {
+        const path = this._path.slice(0, e.path[0].dataset.index);
+        this.dispatchEvent(new CustomEvent('path.selected', {
+          detail: { path }
+        }));
+      }
+      get path() {
+        return this._path;
+      }
+      set path(value) {
+        this._path = value;
+        this._update();
+      }
+    }
+    window.customElements.define('aiplugs-breadcrumb', Breadcrumb);
+  }())
+</script><template id="aiplugs-columnized-list">
+  <style>
+    :host {
+      background-color: var(--color-bas);
+    }
+
+    i {
+      font-family: var(--icon-font-family);
+      color: var(--color-primary);
+    }
+
+    td:nth-child(1)::before {
+      border-color: var(--color-divider);
+    }
+
+    .checked td:nth-child(1)::before,
+    .selected td:nth-child(1)::before {
+      border-color: var(--color-primary);
+    }
+
+    .checked td:nth-child(1)::after {
+      background: var(--color-primary);
+    }
+
+    .checked {
+      background: var(--color-divider);
+    }
+
+    .selected {
+      background: var(--color-secondary);
+    }
+
+    :host {
+      display: block;
+    }
+
+    i {
+      font-style: normal;
+      margin: 6px;
+    }
+
+    table {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    table.dragover::after {
+      display: flex;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      font-size: 48px;
+      background: rgba(255, 255, 255, .5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    thead,
+    tbody,
+    th,
+    td {
+      display: block;
+    }
+
+    thead,
+    tbody {
+      overflow-y: scroll;
+    }
+
+    thead::-webkit-scrollbar {
+      visibility: hidden;
+    }
+
+    tbody {
+      flex: 1;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px;
+      width: 144px;
+      font-size: 12px;
+    }
+
+    th {
+      color: var(--color-text-secondary);
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 12px;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      flex: 1;
+    }
+
+    td:nth-child(1),
+    td:nth-child(2) {
+      cursor: pointer;
+    }
+
+    td:nth-child(1) {
+      position: relative;
+      display: block;
+      width: 24px;
+      height: 24px;
+    }
+
+    td:nth-child(1)::before {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 24px;
+      height: 24px;
+      top: 12px;
+      left: 12px;
+      content: "";
+      border-style: solid;
+      border-width: 2px;
+      border-radius: 8px;
+      transition: all linear .15s;
+    }
+
+    .checked td:nth-child(1)::after,
+    .selected td:nth-child(1)::after {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 16px;
+      height: 16px;
+      top: 16px;
+      left: 16px;
+      content: "";
+      border-radius: 4px;
+    }
+
+    td:nth-child(2) {
+      font-size: 16px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    tbody {
+      overflow-y: scroll;
+      background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+      background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+      background-repeat: no-repeat;
+      background-color: white;
+      background-size: 100% 20px, 100% 20px, 100% 7px, 100% 7px;
+      background-attachment: local, local, scroll, scroll;
+    }
+  </style>
+  <table>
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</template>
+<script>
+  (function () {
+    const LABEL_PREFIX = 'label-';
+    const SELECTED = 'selected';
+    const CHECKED = 'checked';
+    const tree = document.currentScript.ownerDocument;
+    class ColumnizedList extends HTMLElement {
+      static get observedAttributes() {
+        return ["columns"];
+      }
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-columnized-list').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          columns: shadow.querySelector('thead'),
+          items: shadow.querySelector('tbody')
+        }
+
+        this.label = {};
+        this.columns = [];
+        this._items = [];
+
+        this._initLabel();
+      }
+      _initLabel() {
+        const attrs = [... this.attributes];
+        attrs.filter(attr => attr.name.startsWith(LABEL_PREFIX)).forEach(attr => {
+          const key = attr.name.substring(LABEL_PREFIX.length).replace(/-/g, '').toLowerCase();
+          this.label[key] = attr.value;
+        });
+      }
+      _initColumns(columns) {
+        this.columns = (columns || '').split('|');
+        this.el.columns.innerHTML = `<tr><th></th>${this.columns.map(col => `<th>${this._resolveLabel(col)}</th>`).join('')}</tr>`
+      }
+      _resolveLabel(key) {
+        return this.label[key.toLowerCase()] || key;
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        this._initColumns(newVal);
+        this._update();
+      }
+      _findRow(path) {
+        return path.find(el => el.constructor === HTMLTableRowElement);
+      }
+      _onSelect(e) {
+        const row = this._findRow(e.path);
+        const already = row.classList.contains(SELECTED);
+        this.el.items.querySelectorAll(`.${SELECTED}`).forEach(el => el.classList.remove(SELECTED));
+        row.classList.add(SELECTED);
+
+        const item = this._items[row.dataset.index];
+        this.dispatchEvent(new CustomEvent(`${item.type}.selected`, {
+          detail: item
+        }));
+        this._change('select', !already, item);
+      }
+      _onCheck(e) {
+        const row = this._findRow(e.path);
+        const checked = row.classList.toggle(CHECKED);
+        const item = this._items[row.dataset.index];
+        this._change('check', checked, item);
+      }
+      _change(type, state, item) {
+        this.dispatchEvent(new CustomEvent('change', {
+          detail: {
+            type, state, item
+          }
+        }));
+      }
+      _update() {
+        const template = this._items.map((item, i) => {
+          return `<tr data-index='${i}'>
+                                <td></td>
+                                ${this.columns.map((col, idx) => {
+              if (idx == 0)
+                return `<td class='${item.type}' title='${item[col]}'><i>${item.icon}</i>${item[col]}</td>`
+              else
+                return `<td>${item[col]}</td>`
+            }).join('')}
+                            </tr>`;
+        }).filter(tmpl => tmpl != null).join('');
+        this.el.items.innerHTML = template;
+
+        this.el.items.querySelectorAll('tr td:nth-child(1)').forEach(el => el.addEventListener('click', e => this._onCheck(e)));
+        this.el.items.querySelectorAll('tr td:nth-child(2)').forEach(el => el.addEventListener('click', e => this._onSelect(e)));
+      }
+      set items(value) {
+        this._items = value;
+        this._update();
+      }
+      get items() {
+        return this._items;
+      }
+      get checkedItems() {
+        return [...this.el.items.querySelectorAll('.checked')].map(el => this.items[el.dataset.index]);
+      }
+      get selectedItem() {
+        const selected = this.el.items.querySelector('.selected');
+        if (!selected)
+          return null;
+
+        return this.items[selected.dataset.index];
+      }
+    }
+
+    window.customElements.define('aiplugs-columnized-list', ColumnizedList);
+  }())
+</script><template id="aiplugs-autofields">
+  <style>
+    .field {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      color: var(--color-primary-text);
+      margin-bottom: 6px;
+      display: block;
+      font-size: 16px;
+    }
+    aiplugs-array-item > .field,
+    aiplugs-array-item .field:nth-child(1) {
+      margin-top: 0;
+    }
+
+    .desc {
+      color: var(--color-secondary-text);
+      font-size: 12px;
+      margin: 12px 0;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      border-radius: 4px;
+      border: 1px solid #999;
+      padding: 12px;
+      outline: none;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      flex: 1;
+    }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="number"]):not([type="date"]):not([type="datetime-local"]),
+    textarea {
+      max-width: 320px;
+    }
+    textarea {
+      min-height: 120px;
+    }
+    select {
+      max-width: 346px;
+    }
+    input[type="number"], input[type="date"], input[type="datetime-local"] {
+      max-width: 160px;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]):focus,
+    textarea:focus,
+    select:focus {
+      border-radius: 4px;
+      border: 1px solid var(--color-primary);
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      display: none;
+    }
+
+    input[type="checkbox"]~.checkbox {
+      box-sizing: border-box;
+      outline: 0;
+      display: block;
+      width: 4em;
+      height: 2em;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      background: var(--color-text-secondary);
+      border-radius: 2em;
+      padding: 2px;
+      transition: all .4s ease;
+    }
+
+    input[type="checkbox"]~.checkbox:after,
+    input[type="checkbox"]~.checkbox:before {
+      position: relative;
+      display: block;
+      content: "";
+      width: 50%;
+      height: 100%;
+    }
+
+    input[type="checkbox"]~.checkbox:after {
+      left: 0;
+      border-radius: 50%;
+      background: #fff;
+      transition: all .2s ease;
+    }
+
+    input[type="checkbox"]~.checkbox:before {
+      display: none;
+    }
+
+    input[type="checkbox"]:checked~.checkbox:after {
+      left: 50%;
+    }
+
+    input[type="checkbox"]:checked~.checkbox {
+      background: var(--color-primary);
+    }
+
+    .radio-label {
+      line-height: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="radio"]~.radio {
+      position: relative;
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      margin-right: 6px;
+    }
+
+    input[type="radio"]~.radio::before {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 24px;
+      height: 24px;
+      content: "";
+      border-style: solid;
+      border-width: 2px;
+      border-radius: 8px;
+      transition: all linear .15s;
+      border-color: var(--color-divider, #f0f0f0);
+    }
+
+    input[type="radio"]~.radio::after {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 4px;
+      height: 4px;
+      top: 10px;
+      left: 10px;
+      content: "";
+      border-radius: 50%;
+      background: transparent;
+      transition: border-radius ease-out .5s;
+    }
+
+    input[type="radio"]:checked~.radio::before {
+      border-color: var(--color-primary, hsl(207, 90%, 54%));
+    }
+
+    input[type="radio"]:checked~.radio::after {
+      width: 16px;
+      height: 16px;
+      top: 4px;
+      left: 4px;
+      border-radius: 4px;
+      background: var(--color-primary, hsl(207, 90%, 54%));
+    }
+    input:invalid {
+      border-color: var(--color-error) !important;
+    }
+  </style>
+  <slot></slot>
+  <div></div>
+</template>
+<script src="https://unpkg.com/json-schema-ref-parser@4.0.3/dist/ref-parser.min.js"></script>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    class XFields extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-autofields').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+        this.el = { container: shadow.querySelector('div') };
+      }
+      static get observedAttributes() {
+        return ["schema"];
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (newVal) {
+          this._init(newVal);
+        }
+      }
+      _parseSchema(schemaUrl) {
+        return $RefParser.parse(schemaUrl).then(schema => {
+          const hash = schemaUrl.indexOf('#');
+          if (hash === -1)
+            return schema;
+          
+          const path = schemaUrl.slice(hash+1).split('/').filter(_ => _);
+
+          return path.reduce((s, key) => s[key], schema);
+        });
+      }
+      _init(schemaUrl) {
+        this._parseSchema(schemaUrl).then(schema => {
+          let defaultData = {};
+          const slot = this.shadowRoot.querySelector('slot');
+          if (slot) {
+            const json = slot.assignedNodes().find(el => el.constructor === HTMLScriptElement && el.type === 'application/json');
+            if (json) {
+              defaultData = JSON.parse(json.innerText);
+            }
+          }
+          const template = this._render(schema, null, defaultData) || '';
+          this.el.container.innerHTML = template;
+        });
+      }
+      _render(obj, name, value, required) {
+        let template = '<div class="field">';
+
+        if (obj.hasOwnProperty('title')) {
+          template += `<label>${obj.title}${required ? '*' : ''}</label>`;
+        }
+        if (obj.hasOwnProperty('description')) {
+          template += `<p class="desc">${obj.description}</p>`;
+        }
+        const parent = name;
+        const next = (name, obj, value, required) => this._render(obj, name, value, required);
+        let postRendereds = [];
+        for (let field of fields) {
+          if (field.condition(obj)) {
+            template += field.template(name, obj, value, required, next);
+            const post = field.postRendered;
+            if (post) {
+              postRendereds.push(post.bind(this));
+            }
+            break;
+          }
+        }
+        template += '</div>';
+        requestIdleCallback(() => {
+          for(let postRendered of postRendereds) {
+            postRendered(name, obj, value);
+          }
+        });
+        return template;
+      }
+
+    }
+    const objectField = {
+      condition: obj => obj.type === 'object',
+      template: (name, obj, value, required, next) => {
+        if (!value) {
+          value = {};
+        }
+        return Object.keys(obj.properties).map(
+          key => next(
+            [name, key].filter(_ => _).join('.'), 
+            obj.properties[key], 
+            value[key], 
+            (obj.required || []).indexOf(key) !== -1
+          )
+        ).join('')
+      }
+    }
+    const numberField = {
+      condition: obj => obj.type === 'integer' || obj.type === 'number',
+      template: (name, obj, value, required) => {
+        const step = obj.type === 'integer' ? '1' : 'any';
+        let min = obj.minimum;
+        if (obj.exclusiveMinimum)
+          min += 1;
+        let max = obj.maximum;
+        if (obj.exclusiveMaximum)
+          max -= 1;
+        let range = '';
+        if (min)
+          range += ` min="${min}"`;
+        if (max)
+          range += ` max="${max}"`;
+        return `<input type="number" name="${name}" value="${value||''}" step="${step}" ${range} ${required?'required':''}/>`
+      },
+      postRendered: inputPostRendered
+    };
+    const textField = {
+      condition: obj => obj.type === 'string' && (!obj.input || ['text', 'email', 'password', 'tel', 'date', 'datetime'].indexOf(obj.input.type) != -1),
+      template: (name, obj, value, required) => {
+        const attrs = { type: (obj.input || { type: 'text' }).type, name };
+        if (attrs.type === 'datetime')
+          attrs.type = 'datetime-local';
+        if (obj.pattern) {
+          attrs.pattern = obj.pattern;
+        }
+        if (obj.maxLength) {
+          attrs.maxlength = obj.maxLength;
+          attrs.style = `max-width: ${obj.maxLength}em;`;
+        }
+        if (required) {
+          attrs.required = 'required';
+        }
+        if (value) {
+          attrs.value = value;
+        }
+        return `<input ${Object.keys(attrs).map(key => `${key}="${attrs[key]}"`).join(' ')}>`;
+      },
+      postRendered: inputPostRendered
+    }
+    const textareaField = {
+      condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'textarea',
+      template: (name, obj, value, required) => `<textarea name="${name}" ${required?'required':''}>${value||''}</textarea>`,
+      postRendered: inputPostRendered
+    }
+    const codeField = {
+      condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'code',
+      template: (name, obj, value, required) => `<textarea name="${name}">${value||''}</textarea>`
+    }
+    const wysiwygField = {
+      condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'wysiwyg',
+      template: (name, obj, value, required) => `<textarea name="${name}">${value||''}</textarea>`
+    }
+    const arrayBox = {
+      condition: obj => obj.type === 'array',
+      template: (name, obj, value, required, next) => {
+        const values = value || [];
+        const _name = obj.items.type === 'object' 
+                    ? index => typeof index !== 'number' ? `${name}[{{index}}]` : `${name}[${index}]` 
+                    : index => `${name}[]`;
+        return `
+        <aiplugs-array min="${obj.minItems || '0'}" max="${obj.maxItems || '*'}" index="${values.length}">
+          <template>${next(_name(), obj.items)}</template>
+          ${values.map((v, i) => `
+            <aiplugs-array-item name="${_name()}">
+              ${next(_name(i), obj.items,v)}
+            </aiplugs-array-item>`
+          )}
+        </aiplugs-array>`
+      }
+    }
+    const checkboxField = {
+      condition: obj => obj.type === 'boolean',
+      template: (name, obj, value, required) => `<label><input type="checkbox" name="${name}" ${value ? 'checked' : ''} ${required?'required':''}/><span class="checkbox"></span></label>`
+    }
+    const radioField = {
+      condition: obj => obj.enum && obj.enum.length <= 5,
+      template: (name, obj, value, required) => {
+        const labels = obj.enumLabels || {};
+        return obj.enum.map(v => `<label class="radio-label"><input type="radio" name="${name}" ${value == v ? 'checked' : ''} ${required?'required':''}/><span class="radio"></span>${labels[v] || v}</label>`).join('');
+      }
+    }
+    const selectField = {
+      condition: obj => obj.enum && obj.enum.length > 5,
+      template: (name, obj, value, required) => {
+        const labels = obj.enumLabels || {};
+        return `<select name="${name}">${obj.enum.map(v => `<option value="${v}">${labels[v] || v}</option>`)}</select>`;
+      }
+    }
+    const tagField = {
+      condition: obj => obj.type === 'array' && obj.items && obj.items.input && obj.items.input.type === 'tag',
+      template: (name, obj, value, required) => `
+        <aiplugs-tag-input name="${name}" multiple>
+          ${(value||[]).map(v => `<aiplugs-tag value="${tag}">${v}</aiplugs-tag>`).join('')}  
+        </aiplugs-tag-input>`
+    }
+    const autocompleteField = {
+      condition: obj => obj.type !== 'array' && !!obj.input && obj.input.type === 'autocomplete',
+      template: (name, obj, value, required) => `<aiplugs-autocomplete name="${name}"></aiplugs-autocomplete>`,
+      postRendered: autocompletePostRendered
+    }
+    const autocompleteMultipleField = {
+      condition: obj => obj.type === 'array' && obj.items && obj.items.input && obj.items.input.type === 'autocomplete',
+      template: (name, obj, value, required) => `<aiplugs-autocomplete name="${name}" multiple></aiplugs-autocomplete>`,
+      postRendered: autocompletePostRendered
+    }
+    const fields = [objectField, numberField, checkboxField, radioField, selectField, textareaField, codeField, wysiwygField, tagField, autocompleteField, textField, autocompleteMultipleField, arrayBox];
+
+    const defaultAutoCompleteOpts = {
+      url: '',
+      paramKey: 'hint',
+      method: 'get',
+      queryParams: {},
+      customHeaders: {}
+    }
+    function requestAutocomplete(opts, hint) {
+      if (typeof opts === 'string') {
+        opts = { url: opts };
+      }
+      opts = Object.assign(defaultAutoCompleteOpts, opts);
+      const params = Object.keys(opts.queryParams).map(k => `${k}=${opts.queryParams[k]}`).join('&');
+      let url = opts.url + ((opts.url.indexOf('?') === -1) ? '?' : '&') + params + `&${opts.paramKey}=${hint}`;
+
+      return fetch(url, { method: opts.method, headers: opts.customHeaders }).then(res => res.json())
+    }
+    function autocompletePostRendered(name, obj, value) {
+      const input = obj.input || obj.items.input;
+      const element = this.shadowRoot.querySelector(`aiplugs-autocomplete[name="${name}"]`);
+      element.addEventListener('change', e => {
+        const autocomplete = e.target;
+        requestAutocomplete(input.autocomplete, e.detail.value).then(data => {
+          autocomplete.suggestion = data;
+        })
+      });
+      (value||[]).forEach(v => {
+        requestAutocomplete(input.autocomplete, v).then(data => {
+          const datum = data.find(d => d.value === v);
+          const tag = document.createElement('aiplugs-tag');
+          tag.value = datum.value;
+          tag.innerText = datum.text;
+          element.appendChild(tag);
+        })
+      })
+    }
+    function inputPostRendered(name, obj, value) {
+    }
+    window.customElements.define('aiplugs-autofields', XFields);
+  }())
+</script><template id="aiplugs-file-detail">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #preview {
+      width: 100%;
+      height: 34%;
+    }
+
+    #preview>img {
+      object-fit: contain;
+      width: 100%;
+      height: 100%;
+    }
+
+    #properties {
+      flex: 1;
+      list-style: none;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    #properties>li {
+      margin: 12px 0;
+      word-wrap: break-word;
+    }
+
+    #properties>li>label {
+      display: block;
+      font-weight: bold;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+  </style>
+  <div id="preview">
+
+  </div>
+  <ul id="properties">
+
+  </ul>
+</template>
+<script>
+  (function () {
+    const LABEL_PREFIX = 'label-';
+    const IGNORE_PROPS = ['icon', 'type']
+    const tree = document.currentScript.ownerDocument;
+    class FileDetail extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-file-detail').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          preview: shadow.querySelector('#preview'),
+          properties: shadow.querySelector('#properties'),
+        }
+
+        this.label = {};
+        this._properties = {};
+
+        this._initLabel();
+      }
+      _initLabel() {
+        const attrs = [... this.attributes];
+        attrs.filter(attr => attr.name.startsWith(LABEL_PREFIX)).forEach(attr => {
+          const key = attr.name.substring(LABEL_PREFIX.length).replace(/-/g, '').toLowerCase();
+          this.label[key] = attr.value;
+        });
+      }
+      _resolveLabel(key) {
+        return this.label[key.toLowerCase()] || key;
+      }
+      _update() {
+        const template = Object.keys(this._properties).map(key => {
+          if (IGNORE_PROPS.indexOf(key.toLowerCase()) != -1)
+            return null;
+          return `<li>
+                                <label>${this._resolveLabel(key)}:</label>
+                                <span>${this._properties[key]}</span>
+                            </li>`
+        }).filter(tmpl => tmpl != null).join('');
+        this.el.properties.innerHTML = template;
+      }
+      preview(blob) {
+        if (blob.type.indexOf('image') != -1) {
+          const reader = new FileReader();
+          reader.onload = () => { this.el.preview.innerHTML = `<img src='${reader.result}'/>`; }
+          reader.readAsDataURL(blob);
+        }
+        else {
+          this.el.preview.innerHTML = "";
+        }
+      }
+      get properties() {
+        return this._properties;
+      }
+      set properties(value) {
+        this._properties = value;
+        this._update();
+      }
+    }
+    window.customElements.define('aiplugs-file-detail', FileDetail)
+  }())
+</script><template id="aiplugs-file-manager">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .vertial {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .horizontal {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .flex {
+      flex: 1;
+    }
+
+    .side {
+      width: 34%;
+    }
+
+    aiplugs-breadcrumb {
+      border-bottom: 1px solid var(--color-divider);
+    }
+
+    aiplugs-file-detail {
+      background: var(--color-bg-secondary);
+    }
+
+    aiplugs-columnized-list {
+      position: relative;
+    }
+
+    aiplugs-columnized-list::after {
+      font-family: var(--icon-font-family);
+      content: var(--icon-upload, "Upload");
+      color: var(--color-primary);
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      position: absolute;
+      display: none;
+      background: rgba(255, 255, 255, 0.75);
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    aiplugs-columnized-list.dragover::after {
+      display: flex;
+    }
+  </style>
+  <aiplugs-breadcrumb></aiplugs-breadcrumb>
+  <slot id="top-actions" name="top-actions"></slot>
+  <div class="horizontal flex">
+    <aiplugs-columnized-list class="flex"></aiplugs-columnized-list>
+    <aiplugs-file-detail class="side"></aiplugs-file-detail>
+  </div>
+  <div class="horizontal">
+    <div class="flex">
+      <slot name="bottom-left-actions"></slot>
+    </div>
+    <div class="side">
+      <slot name="bottom-right-actions"></slot>
+    </div>
+  </div>
+</template>
+<script>
+  (function () {
+    const LABEL_PREFIX = 'label-';
+    const tree = document.currentScript.ownerDocument;
+    class FileManager extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-file-manager').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        const clone = template.cloneNode(true);
+        shadow.appendChild(clone);
+
+        this.path = [];
+
+        this.breadcrumb = shadow.querySelector('aiplugs-breadcrumb');
+        this.list = shadow.querySelector('aiplugs-columnized-list');
+        this.file = shadow.querySelector('aiplugs-file-detail');
+        this.actions = shadow.querySelectorAll('slot');
+
+        this.breadcrumb.addEventListener('path.selected', e => {
+          this.path = e.detail.path;
+          this._go();
+        })
+
+        this.list.addEventListener('folder.selected', e => {
+          const name = e.detail.name;
+          this.push(name);
+        })
+
+        this.list.addEventListener('file.selected', e => {
+          const name = e.detail.name;
+          this.file.properties = e.detail;
+          this.dispatchEvent(new CustomEvent('file.selected', {
+            detail: {
+              name: name,
+              path: this.path.concat([name])
+            }
+          }));
+        })
+
+        this.list.addEventListener('change', e => {
+          const checked = this.list.checkedItems.length;
+          const selected = this.selectedItem ? 1 : 0;
+          this.actions[0].assignedNodes().forEach(el => el.setAttribute('items', checked + selected));
+          this.actions[1].assignedNodes().forEach(el => el.setAttribute('items', checked + selected));
+          this.actions[2].assignedNodes().forEach(el => el.setAttribute('items', selected));
+        })
+
+        this.list.addEventListener('dragover', e => {
+          e.stopPropagation();
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'coppy';
+        });
+        this.list.addEventListener('drop', e => {
+          this.list.classList.remove('dragover')
+          this.dispatchEvent(new CustomEvent('drop', {
+            detail: {
+              files: e.dataTransfer.files
+            }
+          }));
+          e.stopPropagation();
+          e.preventDefault();
+        })
+        this.addEventListener('dragenter', () => { this.list.classList.add('dragover') });
+        this.addEventListener('dragleave', () => { this.list.classList.remove('dragover') });
+      }
+      connectedCallback() {
+        const columnizedList = this.shadowRoot.querySelector('aiplugs-columnized-list');
+        const fileDetail = this.shadowRoot.querySelector('aiplugs-file-detail');
+        const attrs = [... this.attributes];
+        attrs.filter(attr => attr.name.startsWith(LABEL_PREFIX)).forEach(attr => {
+          columnizedList.setAttribute(attr.name, attr.value);
+          fileDetail.setAttribute(attr.name, attr.value);
+        });
+        columnizedList.setAttribute('columns', this.getAttribute('columns') || '');
+      }
+      push(name) {
+        this.path.push(name);
+        this._go();
+      }
+      pop() {
+        const name = this.path.pop();
+        this._go();
+        return name;
+      }
+      move(path) {
+        this.path = !path || path.match(/\s*/) == null ? [] : path.split('/').map(name => name.trim());
+        this._go();
+      }
+      _go() {
+        this.breadcrumb.path = this.path;
+        this.dispatchEvent(new CustomEvent('path.changed', { detail: { path: this.path } }))
+      }
+      get selectedItem() {
+        return this.list.selectedItem;
+      }
+      get checkedItems() {
+        return this.list.checkedItems;
+      }
+    }
+    window.customElements.define('aiplugs-file-manager', FileManager);
+  }())
+</script><template id="aiplugs-form">
+  <form>
+    <slot></slot>
+  </form>
+</template>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    const EXTRACTED = 'extracted';
+    function copy(inputs, elems) {
+      for (let elem of elems) {
+        if ((elem.constructor === HTMLInputElement
+          || elem.constructor === HTMLTextAreaElement
+          || elem.constructor === HTMLSelectElement)
+          && !elem.classList.contains(EXTRACTED)
+          && elem.type !== 'submit') {
+            const name = elem.name;
+            const value = ['checkbox', 'radio'].indexOf(elem.type) != -1 ? elem.checked : elem.value;
+            inputs.push({ name, value });
+          continue;
+        }
+
+        if (!elem || !elem.children)
+          continue;
+
+        copy(inputs, elem.shadowRoot ? [elem.shadowRoot] : elem.children);
+      }
+    }
+    function parse(inputs) {
+      const pairs = inputs.map(input => ({ name: input.name.split('.'), value: input.value }));
+      const grouping = pairs => {
+        const props = [];
+        const parents = [];
+        for (let pair of pairs) {
+          if (pair.name.length > 1) {
+            parents.push(pair);
+          }
+          else {
+            props.push({ name: pair.name[0], value: pair.value });
+          }
+        }
+        if (parents.length === 0)
+          return props;
+        
+        const groups = parents.reduce((groups, pair) => {
+          const key = pair.name.shift();
+          groups[key] = groups[key] || [];
+          groups[key].push(pair);
+          return groups;
+        }, {});
+
+        return Object.keys(groups).map(key => ({
+          name: key,
+          children: grouping(groups[key])
+        })).concat(props);
+      }
+      const objecting = children => {
+        const ret = {};
+        for (let child of children) {
+          const match = child.name.match(/\[\d+\]/);
+          if (match) {
+            const key = child.name.slice(0, match.index);
+            ret[key] = ret[key] || [];
+            ret[key].push(objecting(child.children));
+          }
+          else if (child.hasOwnProperty('children')) {
+            ret[child.name] = objecting(child.children);
+          }
+          else if (child.hasOwnProperty('value')){
+            if (child.name.endsWith('[]')) {
+              const key = child.name.slice(0, child.name.length - 2);
+              ret[key] = ret[key] || [];
+              ret[key].push(child.value);
+            }
+            else {
+              ret[child.name] = child.value;
+            }
+          }
+        }
+        return ret;
+      }
+      return objecting(grouping(pairs));
+    }
+    class XForm extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-form').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        [...this.attributes].forEach(attr => form.setAttribute(attr.name, attr.value));
+
+        const form = shadow.querySelector('form');
+        
+        setTimeout(() => {
+          const submit = this._findSubmit();
+          if (submit) {
+            submit.addEventListener('click', e => {
+              this.submit();
+            });
+          }
+        },0);
+
+        this.el = { form };
+      }
+      get value() {
+        const inputs = [];
+        copy(inputs, this.shadowRoot.querySelector('slot').assignedNodes());
+        return parse(inputs);
+      }
+      update() {
+        const serialize = (parent, value, result) => {
+          if (Array.isArray(value)) {
+            const last = parent.pop();
+            return result.concat(value.map((v, i) => serialize(parent.concat([`${last}[${i}]`]), v, [])).reduce((l, r) => l.concat(r), []));
+          }
+          if (typeof value === 'object') {
+            return result.concat(Object.keys(value).map(key => serialize(parent.concat([key]), value[key], [])).reduce((l, r) => l.concat(r), []));
+          }
+          return result.concat([{ name: parent.join('.'), value }]);
+        }
+        this.el.form.querySelectorAll(`.${EXTRACTED}`).forEach(elem => elem.remove());
+        const values = serialize([], this.value, []);
+        values.forEach(input => {
+          const hidden = document.createElement('input');
+          hidden.type = "hidden";
+          hidden.name = input.name;
+          hidden.value = input.value;
+          hidden.classList.add(EXTRACTED);
+          this.el.form.appendChild(hidden);
+        });
+        return values;
+      }
+      serialize() {
+        return this.update().map(ipt => encodeURI(`${ipt.name}=${ipt.value}`)).join('&');
+      }
+      submit() {
+        if (!this.reportValidity())
+          return;
+        
+        const detail = this.serialize();
+        const ev = new CustomEvent('submit', { cancelable: true, detail });
+        const result = this.dispatchEvent(ev);
+        if (result === true) {
+          this.el.form.submit();
+        }
+      }
+      reportValidity() {
+        let valid = true;
+        const reportAll = elems => {
+          for (let elem of elems) {
+            if ((elem.constructor === HTMLInputElement
+              || elem.constructor === HTMLTextAreaElement
+              || elem.constructor === HTMLSelectElement)
+              && !elem.classList.contains(EXTRACTED)
+              && elem.type !== 'submit'
+              && !elem.reportValidity()) {
+              valid = false;
+            }
+            if (!elem || !elem.children)
+              continue;
+
+            reportAll(elem.shadowRoot ? [elem.shadowRoot] : elem.children);
+          }
+        }
+        reportAll(this.shadowRoot.querySelector('slot').assignedNodes());
+        return valid;
+      }
+      _findSubmit(selector) {
+        const find = elem => {
+          if ((elem.constructor === HTMLInputElement || elem.constructor === HTMLButtonElement) && elem.type === 'submit')
+            return elem;
+
+          if (elem.shadowRoot)
+            return find(elem.shadowRoot);
+
+          if (!elem || !elem.children)
+            return null;
+
+          for (let i = 0; i < elem.children.length; i++) {
+            return find(elem.children[i]);
+          }
+
+          return null;
+        };
+        const assigneds = this.shadowRoot.querySelector('slot').assignedNodes();
+
+        for (let i = assigneds.length - 1; i >= 0; i--) {
+          const result = find(assigneds[i]);
+          if (result)
+            return result;
+        }
+
+        return null;
+      }
+    }
+    window.customElements.define('aiplugs-form', XForm);
+  }())
+</script><template id="aiplugs-tag-input-style">
+  <style>
+    input {
+      border-radius: 4px;
+      border: 1px solid var(--color-text-secondary);
+      padding: 12px;
+      outline: none;
+      width: 96px;
+      color: var(--color-text-secondary);
+      background: var(--color-bg-primary);
+    }
+    input:focus {
+      border-color: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+    input:invalid {
+      border-color: var(--color-error);
+    }
+  </style>
+</template>
+<template id="aiplugs-tag">
+  <style>
+      label {
+          display: inline-block;
+          margin: 6px;
+          padding: 8px 8px 8px 12px;
+          border: 1px solid var(--color-primary);
+          border-radius: 24px;
+          font-size: 16px;
+          color: var(--color-primary);
+          transition: all linear .25s;
+      }
+      label .close {
+          transition: all linear .25s;
+          color: var(--color-secondary);
+      }
+      label:hover {
+          color: var(--color-secondary);
+      }
+      label:hover .close {
+          color: var(--color-accent);
+      }
+  </style>
+  <label>
+      <slot></slot>
+      <input type="hidden" name="" value="" />
+      <span class="close">&times;</span>
+  </label>
+</template>
+<template id="aiplugs-tag-input">
+  <slot></slot><input style="max-width:96px;" />
+</template>
+<template id="aiplugs-tag-autocomplete">
+  <style>
+    input:disabled {
+      display:none;
+    }
+  </style>
+  <slot></slot>
+  <input list="suggestion">
+  <datalist id="suggestion"></datalist>
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    class XTag extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        const input = shadow.querySelector('input');
+        const close = shadow.querySelector('.close')
+
+        close.addEventListener('click', e => {
+          const evt = new Event('remove', { cancelable: true });
+          const result = this.dispatchEvent(evt);
+          if (result === true) {
+            this.remove()
+          }
+        });
+
+        this.el = { input };
+      }
+      static get observedAttributes () {
+        return ['name', 'value']
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (oldVal === newVal)
+          return;
+        
+        if (attrName === 'name') {
+          this.name = newVal;
+        }
+        else if (attrName === 'value') {
+          this.value = newVal;
+        }
+        
+      }
+      get value() {
+        return this.el.input.value
+      }
+      set value(value) {
+        this.setAttribute('value', value);
+        return this.el.input.value = value;
+      }
+      get name() {
+        return this.el.input.name;
+      }
+      set name(name) {
+        this.setAttribute('name', name);
+        this.el.input.name = name;
+      }
+    }
+    window.customElements.define('aiplugs-tag', XTag);
+    
+    class XTagInput extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag-input').content;
+        const style = tree.getElementById('aiplugs-tag-input-style').content;
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.appendChild(style.cloneNode(true));
+        shadow.appendChild(template.cloneNode(true));
+        
+        const input = shadow.querySelector('input');
+        const tags = shadow.querySelector('slot');
+
+        input.addEventListener('keydown', e => {
+          if (e.which === 13 || e.key == ',') {
+            this.add(e.target.value);
+            e.preventDefault();
+          }
+        });
+        input.addEventListener('blur', e => {
+          this.add(e.target.value);
+        });
+
+        this.el = { input, tags };
+      }
+
+      add(value) {
+        const tags = [...this.querySelectorAll(`aiplugs-tag`)];
+        const already = tags.find(tag => tag.value.toLowerCase() == value.toLowerCase());
+
+        if (already) {
+          this.el.input.pattern = `^(?!${tags.map(t => `^${t.value}$`).join('|')})(.+)$`;
+          return
+        }
+
+        const tag = new XTag();
+        tag.name = this.getAttribute('name') || '';
+        tag.value = value;
+        tag.innerText = value;
+        this.appendChild(tag);
+        this.el.input.value = '';
+      }
+    }
+    window.customElements.define('aiplugs-tag-input', XTagInput);
+
+    class XAutoComplete extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-tag-autocomplete').content;
+        const style = tree.getElementById('aiplugs-tag-input-style').content;
+        const shadow = this.attachShadow({ mode: 'open' })
+        shadow.appendChild(style.cloneNode(true));
+        shadow.appendChild(template.cloneNode(true));
+
+        const input = shadow.querySelector('input');
+        const suggestion = shadow.querySelector('datalist');
+
+        let timeout;
+        let text;
+        input.addEventListener('keyup', e => {
+          const value = e.target.value;
+          if (value !== text) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+              this.dispatchEvent(new CustomEvent('change', { detail: value }));
+            }, 500);
+          }
+        });
+        input.addEventListener('keydown', e => {
+          text = e.target.value;
+          if (e.which === 13) {
+            this._onSelect(true);
+            e.preventDefault();
+          }
+        })
+        input.addEventListener('input', e => {
+          this._onSelect(false);
+        })
+
+        this.el = { input, suggestion };
+      }
+      static get observedAttributes () {
+        return ['name', 'multiple']
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+      }
+      set suggestion(items) {
+        this.el.suggestion.innerHTML = items.map(d => `<option value="${d.value}" label="${d.text||''}"/>`).join('');
+      }
+      get multiple() {
+        return this.hasAttribute('multiple');
+      }
+      set multiple(isMultiple) {
+        if (isMultiple)
+          this.setAttributeNode(document.createAttribute("multiple"));
+        else
+          this.removeAttribute('multiple');
+      }
+      _selected() {
+        return this.el.suggestion.querySelector(`option[value="${this.el.input.value}"]`);
+      }
+      _contains(value) {
+        return this.querySelector(`aiplugs-tag[value="${value}"]`);
+      }
+      _onSelect(enter) {
+        const selected = this._selected();
+        if (!selected)
+            return;
+
+        if (this._contains(selected.value))
+          return;
+
+        if (!this.multiple && this.querySelector('aiplugs-tag'))
+            return;
+
+        this.add(selected.label, selected.value);
+
+        this.el.input.value = '';
+        this.el.suggestion.innerHTML = '';
+
+        if (!this.multiple) {
+          this.el.input.disabled = true;
+        }
+      }
+      add(label, value) {
+        const tag = new XTag();
+        tag.name = this.getAttribute('name') || '';
+        tag.value = value;
+        tag.innerText = label || value;
+
+        tag.addEventListener('remove', e => {
+          this.el.input.disabled = false;
+        })
+        this.appendChild(tag);
+      }
+    }
+    window.customElements.define('aiplugs-autocomplete', XAutoComplete);
+  }())
+</script>

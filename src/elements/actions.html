@@ -1,0 +1,49 @@
+<template id="aiplugs-actions">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: row;
+      background: var(--color-bg-primary);
+      padding: 12px;
+    }
+
+    ::slotted(.full) {
+      width: 100%;
+    }
+
+    ::slotted(.space) {
+      flex: 1;
+    }
+  </style>
+  <slot></slot>
+</template>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    class Actions extends HTMLElement {
+      static get observedAttributes() {
+        return ["items"];
+      }
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-actions').content;
+        this.attachShadow({mode:'open'}).appendChild(template.cloneNode(true));
+      }
+      connectedCallback() {
+        this._update(0);
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        this._update(+newVal);
+      }
+      _update(items) {
+        this.querySelectorAll('.any').forEach(el => {
+          el.disabled = items <= 0;
+        });
+        this.querySelectorAll('.one').forEach(el => {
+          el.disabled = items != 1;
+        });
+      }
+    }
+    window.customElements.define('aiplugs-actions', Actions);
+  }())
+</script>

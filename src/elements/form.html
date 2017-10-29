@@ -1,0 +1,199 @@
+<template id="aiplugs-form">
+  <form>
+    <slot></slot>
+  </form>
+</template>
+<script>
+  (function () {
+    const tree = document.currentScript.ownerDocument;
+    const EXTRACTED = 'extracted';
+    function copy(inputs, elems) {
+      for (let elem of elems) {
+        if ((elem.constructor === HTMLInputElement
+          || elem.constructor === HTMLTextAreaElement
+          || elem.constructor === HTMLSelectElement)
+          && !elem.classList.contains(EXTRACTED)
+          && elem.type !== 'submit') {
+            const name = elem.name;
+            const value = ['checkbox', 'radio'].indexOf(elem.type) != -1 ? elem.checked : elem.value;
+            inputs.push({ name, value });
+          continue;
+        }
+
+        if (!elem || !elem.children)
+          continue;
+
+        copy(inputs, elem.shadowRoot ? [elem.shadowRoot] : elem.children);
+      }
+    }
+    function parse(inputs) {
+      const pairs = inputs.map(input => ({ name: input.name.split('.'), value: input.value }));
+      const grouping = pairs => {
+        const props = [];
+        const parents = [];
+        for (let pair of pairs) {
+          if (pair.name.length > 1) {
+            parents.push(pair);
+          }
+          else {
+            props.push({ name: pair.name[0], value: pair.value });
+          }
+        }
+        if (parents.length === 0)
+          return props;
+        
+        const groups = parents.reduce((groups, pair) => {
+          const key = pair.name.shift();
+          groups[key] = groups[key] || [];
+          groups[key].push(pair);
+          return groups;
+        }, {});
+
+        return Object.keys(groups).map(key => ({
+          name: key,
+          children: grouping(groups[key])
+        })).concat(props);
+      }
+      const objecting = children => {
+        const ret = {};
+        for (let child of children) {
+          const match = child.name.match(/\[\d+\]/);
+          if (match) {
+            const key = child.name.slice(0, match.index);
+            ret[key] = ret[key] || [];
+            ret[key].push(objecting(child.children));
+          }
+          else if (child.hasOwnProperty('children')) {
+            ret[child.name] = objecting(child.children);
+          }
+          else if (child.hasOwnProperty('value')){
+            if (child.name.endsWith('[]')) {
+              const key = child.name.slice(0, child.name.length - 2);
+              ret[key] = ret[key] || [];
+              ret[key].push(child.value);
+            }
+            else {
+              ret[child.name] = child.value;
+            }
+          }
+        }
+        return ret;
+      }
+      return objecting(grouping(pairs));
+    }
+    class XForm extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-form').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        [...this.attributes].forEach(attr => form.setAttribute(attr.name, attr.value));
+
+        const form = shadow.querySelector('form');
+        
+        setTimeout(() => {
+          const submit = this._findSubmit();
+          if (submit) {
+            submit.addEventListener('click', e => {
+              this.submit();
+            });
+          }
+        },0);
+
+        this.el = { form };
+      }
+      get value() {
+        const inputs = [];
+        copy(inputs, this.shadowRoot.querySelector('slot').assignedNodes());
+        return parse(inputs);
+      }
+      update() {
+        const serialize = (parent, value, result) => {
+          if (Array.isArray(value)) {
+            const last = parent.pop();
+            return result.concat(value.map((v, i) => serialize(parent.concat([`${last}[${i}]`]), v, [])).reduce((l, r) => l.concat(r), []));
+          }
+          if (typeof value === 'object') {
+            return result.concat(Object.keys(value).map(key => serialize(parent.concat([key]), value[key], [])).reduce((l, r) => l.concat(r), []));
+          }
+          return result.concat([{ name: parent.join('.'), value }]);
+        }
+        this.el.form.querySelectorAll(`.${EXTRACTED}`).forEach(elem => elem.remove());
+        const values = serialize([], this.value, []);
+        values.forEach(input => {
+          const hidden = document.createElement('input');
+          hidden.type = "hidden";
+          hidden.name = input.name;
+          hidden.value = input.value;
+          hidden.classList.add(EXTRACTED);
+          this.el.form.appendChild(hidden);
+        });
+        return values;
+      }
+      serialize() {
+        return this.update().map(ipt => encodeURI(`${ipt.name}=${ipt.value}`)).join('&');
+      }
+      submit() {
+        if (!this.reportValidity())
+          return;
+        
+        const detail = this.serialize();
+        const ev = new CustomEvent('submit', { cancelable: true, detail });
+        const result = this.dispatchEvent(ev);
+        if (result === true) {
+          this.el.form.submit();
+        }
+      }
+      reportValidity() {
+        let valid = true;
+        const reportAll = elems => {
+          for (let elem of elems) {
+            if ((elem.constructor === HTMLInputElement
+              || elem.constructor === HTMLTextAreaElement
+              || elem.constructor === HTMLSelectElement)
+              && !elem.classList.contains(EXTRACTED)
+              && elem.type !== 'submit'
+              && !elem.reportValidity()) {
+              valid = false;
+            }
+            if (!elem || !elem.children)
+              continue;
+
+            reportAll(elem.shadowRoot ? [elem.shadowRoot] : elem.children);
+          }
+        }
+        reportAll(this.shadowRoot.querySelector('slot').assignedNodes());
+        return valid;
+      }
+      _findSubmit(selector) {
+        const find = elem => {
+          if ((elem.constructor === HTMLInputElement || elem.constructor === HTMLButtonElement) && elem.type === 'submit')
+            return elem;
+
+          if (elem.shadowRoot)
+            return find(elem.shadowRoot);
+
+          if (!elem || !elem.children)
+            return null;
+
+          for (let i = 0; i < elem.children.length; i++) {
+            return find(elem.children[i]);
+          }
+
+          return null;
+        };
+        const assigneds = this.shadowRoot.querySelector('slot').assignedNodes();
+
+        for (let i = assigneds.length - 1; i >= 0; i--) {
+          const result = find(assigneds[i]);
+          if (result)
+            return result;
+        }
+
+        return null;
+      }
+    }
+    window.customElements.define('aiplugs-form', XForm);
+  }())
+</script>

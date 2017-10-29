@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>elements | aiplugs</title>
+  <link rel="import" href="/src/index.html" />
+  <link rel="import" href="/src/theme.html" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa" >
+  
+  <style>
+    .logo {
+      font-family: Comfortaa;
+    }
+  </style>
+  
+</head>
+<body>
+  <header>
+    <h1><span class="logo">aiplugs</span> elements</h1>
+    <p>Custom elements made by vanilla js and html5 without polymer.</p>
+  </header>
+  <main>
+    <article>
+      <h2>Tag</h2>
+      <div>
+        <aiplugs-tag name="tags[]" value="aiplugs">aiplugs</aiplugs-tag>
+        <aiplugs-tag name="tags[]" value="iwate">iwate</aiplugs-tag>
+        <aiplugs-tag name="tags[]" value="label">ラベル</aiplugs-tag>
+      </div>
+    </article>
+    <article>
+      <h2>Tag Input</h2>
+      <div>
+        <aiplugs-tag-input >
+          <aiplugs-tag name="tags[]" value="HTML">HTML</aiplugs-tag>
+          <aiplugs-tag name="tags[]" value="javascript">javascript</aiplugs-tag>
+        </aiplugs-tag-input>
+      </div>
+    </article>
+    <article>
+      <h2>Auto Complete</h2>
+      <div>
+        <aiplugs-autocomplete id="auto1" name="tags[]"></aiplugs-autocomplete>
+        <script>
+          document.getElementById('auto1').addEventListener('change', e => {
+            e.target.suggestion = [
+              { text: '', value: 'Sugar' },
+              { text: '', value: 'Salt' },
+              { text: '', value: 'Soy source' }
+            ]
+          })
+        </script>
+      </div>
+    </article>
+    <article>
+      <h2>Auto Complete (multiple)</h2>
+      <div>
+        <aiplugs-autocomplete id="auto2" name="tags[]" multiple></aiplugs-autocomplete>
+        <script>
+          document.getElementById('auto2').addEventListener('change', e => {
+            e.target.suggestion = [
+              { text: "砂糖", value: 'sugar' },
+              { text: "塩", value: 'salt' },
+              { text: "醤油", value: 'soysource' }
+            ]
+          })
+        </script>
+      </div>
+    </article> 
+    <article>
+      <h2>Array</h2>
+      <div>
+        <aiplugs-array>
+          <template>
+            <input type="text">
+          </template>
+          <aiplugs-array-item>
+            <input type="text">
+          </aiplugs-array-item>
+        </aiplugs-array>
+      </div>
+    </article>
+    <article>
+      <h2>Form</h2>
+      <div>
+        <aiplugs-form id="form1">
+          <aiplugs-tag name="tags[]" value="aiplugs">aiplugs</aiplugs-tag>
+          <aiplugs-tag name="tags[]" value="iwate">iwate</aiplugs-tag>
+          <aiplugs-tag name="tags[]" value="label">ラベル</aiplugs-tag>
+          <input type="submit" value="Submit">
+        </aiplugs-form>
+        <textarea id="form1-data"></textarea>
+        <script>
+          document.getElementById("form1").addEventListener("submit", e => {
+            e.preventDefault();
+            document.getElementById("form1-data").value = e.detail;
+          })
+        </script>
+      </div>
+    </article>
+    <article>
+      <h2>Auto Fields</h2>
+      <div>
+        <aiplugs-form id="form2">
+          <aiplugs-autofields schema="/dev/schema.json">
+            <script type="application/json">
+            {
+              "username": "aiplugs",
+              "email": "info@aiplugs.com",
+              "skills": ["html","js"],
+              "workExperience": [
+                { "company": "aiplugs" }
+              ]
+            }
+            </script>
+          </aiplugs-autofields>
+          <input type="submit" value="Submit">
+        </aiplugs-form>
+        <textarea id="form2-data"></textarea>
+        <script>
+          document.getElementById("form2").addEventListener("submit", e => {
+            e.preventDefault();
+            document.getElementById("form2-data").value = e.detail;
+          })
+        </script>
+      </div>
+    </article>
+    <article>
+      <h2>File Manager</h2>
+      <div>
+        <style>
+          .btn {
+            display: -ms-inline-flexbox;
+            display: inline-flex;
+            -ms-flex-align: center;
+            align-items: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            padding: 7.8px 24px;
+            font-size: 14px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            position: relative;
+            z-index: 1;
+            background-color: transparent;
+            border: 1px solid #2196f3;
+            border-color: transparent;
+            color: #2196f3;
+          }
+          .btn.full {
+            width: 100%;
+            border-color: #2196f3;
+            background-color: #2196f3;
+            color:white;
+          }
+        </style>
+        <aiplugs-file-manager columns="name|lastUpdate"
+                              label-name="Name"
+                              label-size="File Size"
+                              label-last-update="Last Update"
+                              label-last-update-by="Last Update User">
+          <aiplugs-actions slot="top-actions">
+            <button class="btn">Uoload</button>
+          </aiplugs-actions>
+          <aiplugs-actions slot="bottom-left-actions">
+              <button  class="btn">Cancel</button>                            
+              <button  class="btn">Delete</button>                            
+          </aiplugs-actions>
+          <aiplugs-actions slot="bottom-right-actions">
+              <button class="btn full">Select</button>              
+          </aiplugs-actions>
+        </aiplugs-file-manager>
+        <script>
+          document.querySelector("aiplugs-file-manager").list.items = [
+            { type: 'folder', icon: '&#xf07b', name: 'Folder 1', lastUpdate: 'now' },
+            { type: 'folder', icon: '&#xf07b', name: 'Folder 2', lastUpdate: 'now' },
+            { type: 'folder', icon: '&#xf07b', name: 'Folder 3', lastUpdate: 'now' },
+            { type: 'folder', icon: '&#xf07b', name: 'Folder 4', lastUpdate: 'now' },
+            { type: 'file', icon: '&#xf016', name: 'File 1', size: '500kb', lastUpdate: 'now', lastUpdateBy: 'aiplugs' },
+            { type: 'file', icon: '&#xf016', name: 'File 2', size: '500kb', lastUpdate: 'now', lastUpdateBy: 'aiplugs' },
+            { type: 'file', icon: '&#xf016', name: 'File 3', size: '500kb', lastUpdate: 'now', lastUpdateBy: 'aiplugs' },
+            { type: 'file', icon: '&#xf016', name: 'File 4', size: '500kb', lastUpdate: 'now', lastUpdateBy: 'aiplugs' },
+            { type: 'file', icon: '&#xf016', name: 'File 5', size: '500kb', lastUpdate: 'now', lastUpdateBy: 'aiplugs' },
+          ]
+        </script>
+      </div>
+    </article>
+  </main>
+  <footer>
+    &copy; aiplugs
+  </footer>
+</body>
+</html>

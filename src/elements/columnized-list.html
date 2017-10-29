@@ -1,0 +1,284 @@
+<template id="aiplugs-columnized-list">
+  <style>
+    :host {
+      background-color: var(--color-bas);
+    }
+
+    i {
+      font-family: var(--icon-font-family);
+      color: var(--color-primary);
+    }
+
+    td:nth-child(1)::before {
+      border-color: var(--color-divider);
+    }
+
+    .checked td:nth-child(1)::before,
+    .selected td:nth-child(1)::before {
+      border-color: var(--color-primary);
+    }
+
+    .checked td:nth-child(1)::after {
+      background: var(--color-primary);
+    }
+
+    .checked {
+      background: var(--color-divider);
+    }
+
+    .selected {
+      background: var(--color-secondary);
+    }
+
+    :host {
+      display: block;
+    }
+
+    i {
+      font-style: normal;
+      margin: 6px;
+    }
+
+    table {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    table.dragover::after {
+      display: flex;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      font-size: 48px;
+      background: rgba(255, 255, 255, .5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    thead,
+    tbody,
+    th,
+    td {
+      display: block;
+    }
+
+    thead,
+    tbody {
+      overflow-y: scroll;
+    }
+
+    thead::-webkit-scrollbar {
+      visibility: hidden;
+    }
+
+    tbody {
+      flex: 1;
+    }
+
+    tr {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px;
+      width: 144px;
+      font-size: 12px;
+    }
+
+    th {
+      color: var(--color-text-secondary);
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 12px;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      flex: 1;
+    }
+
+    td:nth-child(1),
+    td:nth-child(2) {
+      cursor: pointer;
+    }
+
+    td:nth-child(1) {
+      position: relative;
+      display: block;
+      width: 24px;
+      height: 24px;
+    }
+
+    td:nth-child(1)::before {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 24px;
+      height: 24px;
+      top: 12px;
+      left: 12px;
+      content: "";
+      border-style: solid;
+      border-width: 2px;
+      border-radius: 8px;
+      transition: all linear .15s;
+    }
+
+    .checked td:nth-child(1)::after,
+    .selected td:nth-child(1)::after {
+      position: absolute;
+      display: block;
+      box-sizing: border-box;
+      width: 16px;
+      height: 16px;
+      top: 16px;
+      left: 16px;
+      content: "";
+      border-radius: 4px;
+    }
+
+    td:nth-child(2) {
+      font-size: 16px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    tbody {
+      overflow-y: scroll;
+      background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+      background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+      background-repeat: no-repeat;
+      background-color: white;
+      background-size: 100% 20px, 100% 20px, 100% 7px, 100% 7px;
+      background-attachment: local, local, scroll, scroll;
+    }
+  </style>
+  <table>
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</template>
+<script>
+  (function () {
+    const LABEL_PREFIX = 'label-';
+    const SELECTED = 'selected';
+    const CHECKED = 'checked';
+    const tree = document.currentScript.ownerDocument;
+    class ColumnizedList extends HTMLElement {
+      static get observedAttributes() {
+        return ["columns"];
+      }
+      constructor() {
+        super();
+        const template = tree.querySelector('#aiplugs-columnized-list').content;
+        const shadow = this.attachShadow({ mode: 'open' });
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          columns: shadow.querySelector('thead'),
+          items: shadow.querySelector('tbody')
+        }
+
+        this.label = {};
+        this.columns = [];
+        this._items = [];
+
+        this._initLabel();
+      }
+      _initLabel() {
+        const attrs = [... this.attributes];
+        attrs.filter(attr => attr.name.startsWith(LABEL_PREFIX)).forEach(attr => {
+          const key = attr.name.substring(LABEL_PREFIX.length).replace(/-/g, '').toLowerCase();
+          this.label[key] = attr.value;
+        });
+      }
+      _initColumns(columns) {
+        this.columns = (columns || '').split('|');
+        this.el.columns.innerHTML = `<tr><th></th>${this.columns.map(col => `<th>${this._resolveLabel(col)}</th>`).join('')}</tr>`
+      }
+      _resolveLabel(key) {
+        return this.label[key.toLowerCase()] || key;
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        this._initColumns(newVal);
+        this._update();
+      }
+      _findRow(path) {
+        return path.find(el => el.constructor === HTMLTableRowElement);
+      }
+      _onSelect(e) {
+        const row = this._findRow(e.path);
+        const already = row.classList.contains(SELECTED);
+        this.el.items.querySelectorAll(`.${SELECTED}`).forEach(el => el.classList.remove(SELECTED));
+        row.classList.add(SELECTED);
+
+        const item = this._items[row.dataset.index];
+        this.dispatchEvent(new CustomEvent(`${item.type}.selected`, {
+          detail: item
+        }));
+        this._change('select', !already, item);
+      }
+      _onCheck(e) {
+        const row = this._findRow(e.path);
+        const checked = row.classList.toggle(CHECKED);
+        const item = this._items[row.dataset.index];
+        this._change('check', checked, item);
+      }
+      _change(type, state, item) {
+        this.dispatchEvent(new CustomEvent('change', {
+          detail: {
+            type, state, item
+          }
+        }));
+      }
+      _update() {
+        const template = this._items.map((item, i) => {
+          return `<tr data-index='${i}'>
+                                <td></td>
+                                ${this.columns.map((col, idx) => {
+              if (idx == 0)
+                return `<td class='${item.type}' title='${item[col]}'><i>${item.icon}</i>${item[col]}</td>`
+              else
+                return `<td>${item[col]}</td>`
+            }).join('')}
+                            </tr>`;
+        }).filter(tmpl => tmpl != null).join('');
+        this.el.items.innerHTML = template;
+
+        this.el.items.querySelectorAll('tr td:nth-child(1)').forEach(el => el.addEventListener('click', e => this._onCheck(e)));
+        this.el.items.querySelectorAll('tr td:nth-child(2)').forEach(el => el.addEventListener('click', e => this._onSelect(e)));
+      }
+      set items(value) {
+        this._items = value;
+        this._update();
+      }
+      get items() {
+        return this._items;
+      }
+      get checkedItems() {
+        return [...this.el.items.querySelectorAll('.checked')].map(el => this.items[el.dataset.index]);
+      }
+      get selectedItem() {
+        const selected = this.el.items.querySelector('.selected');
+        if (!selected)
+          return null;
+
+        return this.items[selected.dataset.index];
+      }
+    }
+
+    window.customElements.define('aiplugs-columnized-list', ColumnizedList);
+  }())
+</script>

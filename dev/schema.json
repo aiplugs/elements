@@ -1,0 +1,117 @@
+{
+  "$schema": "http://schemas.aiplugs.com/cms/2017-10-16/root.json#",
+  "type":  "object",
+  "properties": {
+    "username": {
+      "title": "Username",
+      "description": "You can input any name with up to 20 single-byte alphanumeric characters and underscores. ",
+      "type": "string",
+      "pattern": "^[_a-zA-Z0-9]{0,20}$"
+    },
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "input": { "type": "email" }
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "birthday": {
+      "title": "Date of Birth",
+      "type": "string",
+      "input": { "type": "date" }
+    },
+    "sex": {
+      "title": "Sex",
+      "type": "string",
+      "enum": [ "Male", "Female" ]
+    },
+    "language": {
+      "title": "Language",
+      "type": "string",
+      "enum": [ "English", "Deutsch", "French", "Arabic", "Hebrew", "Chinese", "Cantonese", "Korean", "Thai", "Japanese" ],
+      "enumLabels": {
+        "French": "Français",
+        "Arabic": "اللغة العربية",
+        "Hebrew": "עברית‎",
+        "Chinese": "官话",
+        "Cantonese": "广东话",
+        "Korean": "한국어",
+        "Thai": "ภาษาไทย",
+        "Japanese": "日本語"        
+      }
+    },
+    "height": {
+      "title": "Height[cm]",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "maximum": 300
+    },
+    "weight": {
+      "title": "Weight[kg]",
+      "type": "number",
+      "minimum": 0
+    },
+    "city": {
+      "title": "Desirable Place to Work",
+      "type": "string",
+      "input": {
+        "type": "autocomplete",
+        "autocomplete": {
+          "url": "/dev/cities.json",
+          "paramKey": "hint"
+        }
+      }
+    },
+    "skills": {
+      "title": "Skills",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "input": {
+          "type": "autocomplete",
+          "autocomplete": {
+            "url": "/dev/skills.json",
+            "paramKey": "hint"
+          }
+        }
+      }
+    },
+    "hobbies": {
+      "title": "Hobbies",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "input": { "type": "tag" }
+      }
+    },
+    "workExperience": {
+      "title": "Work Experience",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "title": "Company Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "input": {
+              "type": "textarea"
+            },
+            "maxLength": 240
+          }
+        }
+      }
+    },
+    "agreement": {
+      "title": "I agree to terms",
+      "type": "boolean"
+    }
+  },
+  "required": [ "username", "email" ]
+}
