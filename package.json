@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "./node_modules/.bin/http-server ./",
-    "publish": "node publish.js"
+    "publish": "node publish.js",
+    "test":""
   },
   "repository": {
     "type": "git",
