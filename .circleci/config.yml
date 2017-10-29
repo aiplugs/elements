@@ -21,13 +21,18 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: npm install -D
+
       - save_cache:
           paths:
             - node_modules
-          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+          key: v1-dependencies-{{ checksum "package.json" }}
         
       # run tests!
       - run: npm test
+
+      - save_cache:
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
 
   deploy:
     docker:
