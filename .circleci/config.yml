@@ -24,18 +24,22 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
         
       # run tests!
       - run: npm test
+
   deploy:
     docker:
       - image: circleci/node:7.10
+
+    working_directory: ~/repo
+
     steps:
       - restore_cache:
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      - run: npm publish
+      - run: echo "npm publish"
 
 workflows:
   version: 2
