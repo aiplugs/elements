@@ -1,12 +1,12 @@
 {
   "name": "aiplugs-elements",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "aiplugs custom elements",
   "main": "index.js",
   "scripts": {
     "dev": "./node_modules/.bin/http-server ./",
     "publish": "node publish.js",
-    "test":""
+    "test": ""
   },
   "repository": {
     "type": "git",
