@@ -39,7 +39,7 @@ jobs:
       - restore_cache:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      - run: echo "npm publish"
+      - run: npm publish
 
 workflows:
   version: 2
