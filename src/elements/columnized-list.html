@@ -194,7 +194,6 @@
         this.label = {};
         this.columns = [];
         this._items = [];
-
         this._initLabel();
       }
       _initLabel() {
@@ -212,6 +211,7 @@
         return this.label[key.toLowerCase()] || key;
       }
       attributeChangedCallback(attrName, oldVal, newVal) {
+        this._initLabel();                
         this._initColumns(newVal);
         this._update();
       }

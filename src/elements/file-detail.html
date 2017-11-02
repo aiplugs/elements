@@ -62,8 +62,6 @@
 
         this.label = {};
         this._properties = {};
-
-        this._initLabel();
       }
       _initLabel() {
         const attrs = [... this.attributes];
@@ -76,6 +74,7 @@
         return this.label[key.toLowerCase()] || key;
       }
       _update() {
+        this._initLabel();                
         const template = Object.keys(this._properties).map(key => {
           if (IGNORE_PROPS.indexOf(key.toLowerCase()) != -1)
             return null;
