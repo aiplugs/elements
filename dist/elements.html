@@ -344,10 +344,63 @@
     }
     window.customElements.define('aiplugs-breadcrumb', Breadcrumb);
   }())
-</script><template id="aiplugs-columnized-list">
+</script><style>
+  
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    border-radius: 2px;
+    padding: 7.8px 24px;
+    font-size: 14px;
+    background: transparent;
+    border: 1px solid transparent;    
+    color: var(--color-primary);
+    transition: all linear .15s;
+  }
+  .btn:hover {
+    box-shadow: 0 5px 10px rgba(0,0,0,0.30);
+  }
+  .btn:active {
+    box-shadow: 0 2px 7px rgba(0,0,0,0.30);
+  }
+  .btn.gohst {
+    border: 1px solid var(--color-primary);    
+  }
+  .btn.gohst:hover {
+    box-shadow: none;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .btn.gohst:active {
+    box-shadow: none;
+    border-color: transparent;    
+    background: var(--color-primary);
+    color:var(--color-text-inverted);
+  }
+  .btn.block {
+    width: 100%;
+    background: var(--color-primary);
+    color:var(--color-text-inverted);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    color: var(--color-text-secondary);
+  }
+  .btn:disabled:hover {
+    box-shadow: none;
+  }
+  .btn.primary {
+    background: var(--color-primary);
+    color: var(--color-text-inverted);
+  }
+</style><template id="aiplugs-columnized-list">
   <style>
-    :host {
-      background-color: var(--color-bas);
+    :host, table {
+      background-color: var(--color-base);
     }
 
     i {
@@ -540,7 +593,6 @@
         this.label = {};
         this.columns = [];
         this._items = [];
-
         this._initLabel();
       }
       _initLabel() {
@@ -558,6 +610,7 @@
         return this.label[key.toLowerCase()] || key;
       }
       attributeChangedCallback(attrName, oldVal, newVal) {
+        this._initLabel();                
         this._initColumns(newVal);
         this._update();
       }
@@ -594,7 +647,7 @@
           return `<tr data-index='${i}'>
                                 <td></td>
                                 ${this.columns.map((col, idx) => {
-              if (idx == 0)
+              if (idx == 0 && item.icon)
                 return `<td class='${item.type}' title='${item[col]}'><i>${item.icon}</i>${item[col]}</td>`
               else
                 return `<td>${item[col]}</td>`
@@ -1103,8 +1156,6 @@
 
         this.label = {};
         this._properties = {};
-
-        this._initLabel();
       }
       _initLabel() {
         const attrs = [... this.attributes];
@@ -1117,6 +1168,7 @@
         return this.label[key.toLowerCase()] || key;
       }
       _update() {
+        this._initLabel();                
         const template = Object.keys(this._properties).map(key => {
           if (IGNORE_PROPS.indexOf(key.toLowerCase()) != -1)
             return null;
@@ -1311,6 +1363,9 @@
       _go() {
         this.breadcrumb.path = this.path;
         this.dispatchEvent(new CustomEvent('path.changed', { detail: { path: this.path } }))
+      }
+      reload() {
+        this._go();
       }
       get selectedItem() {
         return this.list.selectedItem;
@@ -1519,6 +1574,1077 @@
     }
     window.customElements.define('aiplugs-form', XForm);
   }())
+</script><template id="aiplugs-modal">
+  <style>
+    :host {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+      background: var(--color-base);
+    }
+    div {
+      width: 90vw;
+      height: 90vh;
+      max-width: 60rem;
+      max-height: 40rem;
+      display: flex;
+      flex-direction:column;
+    }
+  </style>
+  <div>
+    <slot></slot>
+  </div>
+</template>
+<script>
+  const tree = document.currentScript.ownerDocument;
+  (function(){
+    class XModal extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-modal').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+      }
+    }
+    customElements.define('aiplugs-modal', XModal);
+  }())
+</script><template id="aiplugs-nav-item">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+    .left {
+      width: 64px;
+      min-width: 64px;
+      font-size: 24px;
+      display: inline-block;
+      text-align: center;
+    }
+    a {
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background linear 0.25s;
+      text-overflow:clip;
+      white-space: nowrap;
+    }
+    a:hover {
+      background: rgba(255,255,255,0.15);      
+    }
+    :host(.active) a, a:active {
+      transition: none;      
+      background: var(--color-accent);
+    }
+    .left, .right {
+      user-select: none;
+    }
+  </style>  
+  <a>
+    <span class="left">
+      <slot name="icon"></slot>
+    </span>
+    <span class="right">
+      <slot></slot>
+    </span>
+  </a>
+</template>
+<template id="aiplugs-nav-items">
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      width: calc(64px + 180px);
+      color: var(--color-text-inverted);
+      overflow: hidden;
+      transition: all linear .05s;
+      position: relative;
+      z-index: 0;
+    }
+    :host(:first-child)::before {
+      content: "";
+      position: absolute;
+      width: calc(100vw + 10px);
+      height: calc(100vh + 10px);
+      top: -5px;
+      bottom: -5px;
+      left: -5px;
+      right: -5px;
+      filter: blur(5px);
+      background: var(--bg-image-primary);
+      background-size: cover;  
+
+      z-index: -1;  
+    }
+  </style>
+  <slot></slot>
+  <slot name="bottom"></slot>
+</template>
+<template id="aiplugs-nav-separator">
+  <style>
+    :host {
+      flex: 1;
+    }
+  </style>
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    class XItems extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-nav-items').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+      }
+    }
+    customElements.define('aiplugs-nav-items', XItems);
+    class XItem extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-nav-item').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+      }
+      static get observedAttributes() {
+        return ["href"];
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        this.shadowRoot.querySelector('a').href = newVal;
+      }
+    }
+    customElements.define('aiplugs-nav-item', XItem);
+    class XSeparator extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-nav-separator').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+      }
+    }
+    customElements.define('aiplugs-nav-separator', XSeparator);
+  }())
+</script><template id="aiplugs-search">
+  <style>
+    .container {
+      border-radius: 4px;
+      border: 1px solid var(--color-text-secondary);
+      padding: 12px;
+      height: 19px;
+      font-size: 19px;
+      cursor:text;
+    }
+    .container.focus {
+      border-color: var(--color-primary);
+    }
+    .suggestion {
+      background: var(--color-base);
+      padding: 0;
+      margin: 0;
+      display: table-cell;
+      min-width: 200px;
+      box-shadow: 0 0 1px var(--color-text-primary) inset;
+    }
+    .suggestion.active {
+      position: relative;
+    }
+    .suggestion li {
+      padding: 8px;
+      transition: background linear .12s;
+    }
+    .suggestion li:hover,
+    .suggestion li.active {
+      background: var(--color-secondary);
+    }
+    .input, .token {
+      outline: none;
+      display: inline-block;
+      min-width: 1px;
+    }
+    .token {
+      color: var(--color-text-primary);
+    }
+    .token::after {
+      content: '';
+      display: inline-block;
+      width: 0.5em;
+    }
+    .token.keyword {
+      color: var(--color-primary);
+      font-weight: bold;
+    }
+    .token:not(.keyword) + span:not(.keyword) {
+      padding-left: 0;
+    }
+  </style>
+  <div class="container">
+    <span contenteditable="true" class="input"></span>
+  </div>
+  <ul class="suggestion">
+  </ul>
+  <input type="hidden">
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    const Backspace =  8;
+    const Enter     = 13;
+    const Space     = 32;
+    const Left      = 37;
+    const Up        = 38;
+    const Right     = 39;
+    const Down      = 40;
+    const Delete    = 46;
+    const Sibling = { [Up]: 'previousElementSibling', [Down]: 'nextElementSibling', [Left]: 'previousElementSibling', [Right]: 'nextElementSibling', [Backspace]: 'previousElementSibling', [Delete]: 'nextElementSibling' };
+    const CursorPosition = { [Left]: el => el.innerText.length, [Right]: el => 0, [Backspace]: el => el.innerText.length, [Delete]: 0 };
+    class XSearch extends HTMLElement {
+      static get observedAttributes() {
+        return ['schema', 'value'];
+      }
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-search').content;
+        const shadow = this.attachShadow({mode: 'open'});
+        shadow.appendChild(template.cloneNode(true));
+
+        const container  = shadow.querySelector('.container');
+        const suggestion = shadow.querySelector('.suggestion');
+        const input      = shadow.querySelector('.input');
+        
+        const select = (elem) => {
+          const label = elem.innerText;
+          const value = elem.dataset.value;
+          this._add(label, value, true);
+          
+          input.innerText = '';
+          input.focus();
+        }
+        input._focus = () => {
+          input.focus();
+        }
+        container.addEventListener('click', e => {
+          const selection = shadow.getSelection();
+          container.classList.add('focus');
+          if (e.path[0] === container && selection.rangeCount === 0) {
+              this.focus();
+          }
+        })
+        input.addEventListener('blur', e => {
+          container.classList.remove('focus');
+          suggestion.innerHTML = '';
+
+          const text = input.innerText.trim();
+          if (text) {
+            this._add(text, text);
+            input.innerText = '';
+          }
+          container.appendChild(input);
+
+          const value = ([...container.querySelectorAll('.token')]).map(t => t.dataset.value).join(' ');
+          const hidden = this.shadowRoot.querySelector('input[type="hidden"]');
+          hidden.value = value;          
+        })
+        input.addEventListener('keyup', e => {
+          this._suggestion(e.target.innerText);
+        })
+        input.addEventListener('keydown', e => {
+          if (e.which === Up || e.which === Down) {
+            const active = suggestion.querySelector('.active');
+            if (!active) {
+              suggestion.firstChild.classList.add('active');
+            } 
+            else if (active[Sibling[e.which]]){
+              active.classList.remove('active');
+              active[Sibling[e.which]].classList.add('active');
+            }
+          }
+          else if (e.which === Enter) {
+            const active = suggestion.querySelector('.active');            
+            if (active) {
+              select(active);
+            }
+            e.preventDefault();
+          }
+          else if (e.which === Space) {
+            const text = input.innerText.trim();
+            if (text) {
+              this._add(text, text);
+              input.innerText = '';
+            }
+            e.preventDefault();
+          }
+          else if ((e.which === Left && this._cursorPosition(0)) || (e.which === Right && this._cursorPosition(-1))) {
+            this._cursorMove(input, e.which);
+            e.preventDefault();
+          }
+          else if ((e.which === Backspace && this._cursorPosition(0)) || (e.which === Delete && this._cursorPosition(-1))) {
+            this._remove(input, e.which);
+            e.preventDefault();
+          }
+          else if ((e.which === Backspace || e.which === Delete)) {
+            const selection = this.shadowRoot.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              let elem = range.startContainer.parentElement;
+              do {
+                if (elem === input) {
+                  elem = elem.nextElementSibling;
+                  continue;
+                }
+                const r = elem;
+                elem = elem.nextElementSibling;                
+                r.remove();
+                if (r === range.endContainer.parentElement) {
+                  break;
+                }
+              } while (elem);
+              input.focus();
+              selection.setPosition(input, 0);
+            }
+          }
+          else if (e.ctrlKey && e.code === 'KeyA') {
+            const selection = this.shadowRoot.getSelection();
+            const range = new Range();
+            range.setStart(container.firstElementChild, 0);
+            range.setEnd(container.lastElementChild, 0);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            e.preventDefault();
+          }
+        })
+        suggestion.addEventListener('mouseover', e => {
+          for(let item of suggestion.querySelectorAll('.active')) {
+            item.classList.remove('active');
+          }
+          suggestion.querySelector('li:hover').classList.add('active');
+        })
+        suggestion.addEventListener('click', e => { 
+          select(e.path[0]); 
+        })
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (attrName === 'schema') {
+          parseSchema(newVal).then(schema => {
+            this._datalist = extract(schema);
+          }).catch(err => {
+            this._datalist = [];
+          }).then(() => {
+            this._suggestion();
+          });
+        }
+        else {
+          const value = newVal.decodeHTML();
+          const hidden = this.querySelector('input[type="hidden"]');
+          if (value != hidden.value) {
+            hidden.value = value;
+            const tokens = value.split(/\s/).map(v => {
+              const datum = this._datalist.find(d => d.value === v);
+              return datum ? `<span class="token keyword" data-value="${datum.value}">${datum.label}</span>`
+                          : `<span class="token" data-value="${v}">${v}</span>`;
+            })
+            const container = this.shadowRoot.querySelector('.container');
+            for(let token of this.shadowRoot.querySelectorAll('.token')) {
+              token.remove();
+            }
+            for(let token of tokens.reverse()) {
+              container.insertBefore(token, container.firstElementChild);
+            }
+          }
+        }
+      }
+      _suggestion(hint) {
+        const suggestion = this.shadowRoot.querySelector('.suggestion');
+        const active = suggestion.querySelector('.active');
+        const index  = (function() {
+          for(let i = 0; i < suggestion.children.length; i++) 
+            if (suggestion.children[i].classList.contains('active'))
+              return i;
+          return -1;
+        }());
+        
+        suggestion.innerHTML 
+          = this._datalist.filter(d => d.label.indexOf(hint) !== -1 || d.value.indexOf(hint) !== -1)
+                .map((s,i) => `<li class="${i===index?'active':''}" data-value="${s.value}">${s.label}</li>`).join('');
+
+        requestIdleCallback(() => {
+          if (suggestion && suggestion.children.length > 0 && suggestion.children.length <= index)
+            suggestion.lastChild.classList.add('active');
+        })
+      }
+      _cursorPosition(pos) {
+        const range = this.shadowRoot.getSelection().getRangeAt(0); 
+        if (pos < 0) {
+          pos = range.startContainer.length;
+        }
+        return range.startContainer === range.endContainer && range.startOffset === range.endOffset && range.startOffset === pos;
+      }
+      _cursorMove(elem, direction) {
+        let next = elem[Sibling[direction]];
+        while(next && next.classList.contains('keyword')) {
+          next = next[Sibling[direction]];
+        }
+        if (next) {
+          next._focus();
+          this.shadowRoot.getSelection().setPosition(next.childNodes[0] || next, CursorPosition[direction](next));
+        }
+      }
+      _remove(elem, direction) {
+        let next = elem[Sibling[direction]];
+        if (!next) 
+          return;
+        
+        if (next.classList.contains('keyword')) {
+          next.remove();
+        } 
+        else {
+          next._focus();
+          this.shadowRoot.getSelection().setPosition(next.childNodes[0] || next, CursorPosition[direction](next));
+        }
+      }
+      _add(label, value, keyword) {
+        const container = this.shadowRoot.querySelector('.container');
+        const suggestion = this.shadowRoot.querySelector('.suggestion');
+        const input = this.shadowRoot.querySelector('.input');
+        const token = document.createElement('span');
+        token.classList.add('token');
+        token.setAttribute('data-value', value);
+        token.innerText = label;
+        if (keyword) {
+          token.classList.add('keyword');
+        }
+
+        token.addEventListener('keydown', e => {
+          if (e.which === Up || e.which === Down) {
+            const active = suggestion.querySelector('.active');
+            if (!active) {
+              suggestion.firstChild.classList.add('active');
+            } 
+            else if (active[Sibling[e.which]]){
+              active.classList.remove('active');
+              active[Sibling[e.which]].classList.add('active');
+            }
+          }
+          else if (e.which === Enter) {
+            const active = suggestion.querySelector('.active');            
+            if (active) {
+              select(active);
+            }
+            e.preventDefault();
+          }
+          else if (e.which === Space) {
+            if (token.nextSibling && token.nextSibling !== input) {
+              container.insertBefore(input, token.nextSibling);
+            }
+            this.focus();
+            e.preventDefault();
+          }
+          else if ((e.which === Left && this._cursorPosition(0)) || (e.which === Right && this._cursorPosition(-1))) {
+            this._cursorMove(token, e.which);
+            e.preventDefault();
+          }
+          else if ((e.which === Backspace && this._cursorPosition(0)) || (e.which === Delete && this._cursorPosition(-1))) {
+            this._remove(token, e.which);
+            e.preventDefault();
+          }
+        })
+        token._focus = () => {
+          token.setAttribute('contenteditable', true);
+          token.focus();          
+        }
+        token.addEventListener('blur', e => {
+          var text = token.innerText.trim();
+          token.dataset.value = text;
+          token.removeAttribute('contenteditable');
+          if (!text) {
+            token.remove();
+          }
+        })
+        token.addEventListener('click', e => {
+          token._focus();
+        });
+
+        container.insertBefore(token, input);
+      }
+      focus() {
+        const input     = this.shadowRoot.querySelector('.input');
+        const selection = this.shadowRoot.getSelection();
+        input.focus();
+      }
+      get value() {
+        return this.querySelector('input[type="hidden"]').value;
+      }
+      set value(value) {
+        this.setAttribute('value', value.encodeHTML());
+      }
+    }
+    
+    customElements.define('aiplugs-search', XSearch);
+
+    function extract(schema) {
+      const arr = [];
+      const f = (schema, path, name) => {
+        if (schema.type === 'object') {
+          for(let key in schema.properties) {
+            f(schema.properties[key], path + '.' + key, key);
+          }
+        }
+        else if (schema.type === 'array') {
+          f(schema.items, path + '[]', name);
+        }
+        else {
+          arr.push({ label: schema.title || name, value: path});
+        }
+      }
+      f(schema, '$', '$');
+      return arr;
+    }
+
+    function parseSchema(schemaUrl) {
+      return $RefParser.parse(schemaUrl).then(schema => {
+        const hash = schemaUrl.indexOf('#');
+
+        if (hash === -1)
+          return schema;
+        
+        return schemaUrl
+                .slice(hash+1)
+                .split('/')
+                .filter(_ => _)
+                .reduce((s, key) => s[key], schema);
+      });
+    }
+  }())
+</script>
+<template id="aiplugs-search2">
+  <style>
+    .container {
+      border-radius: 4px;
+      border: 1px solid var(--color-text-secondary);
+      padding: 12px 16px;
+      cursor:text;
+      outline: none;
+      font-size: 16px;
+    }
+    .container.focus {
+      border-color: var(--color-primary);
+    }
+    .container:not(.focus) ~ .suggestion:not(:hover) {
+      /* display: none; */
+    }
+    .suggestion {
+      position: relative;
+      background: var(--color-base);
+      padding: 0;
+      margin: 0;
+      display: table-cell;
+      min-width: 200px;
+      box-shadow: 0 0 1px var(--color-text-primary) inset;
+    }
+    .suggestion.active {
+      position: relative;
+    }
+    .suggestion li {
+      padding: 8px;
+      transition: background linear .12s;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .suggestion li:hover,
+    .suggestion li.active {
+      background: var(--color-secondary);
+    }
+    .suggestion li > span:nth-child(2) {
+      color: var(--color-text-secondary);
+    }
+    .token {
+      outline: none;
+      display: inline-block;
+      min-width: 1px;
+    }
+    .token {
+      color: var(--color-text-primary);
+    }
+    .token.keyword {
+      color: white;
+      background: var(--color-primary);
+      padding: 0.3em 0.5em;
+      border: 1px solid var(--color-primary);
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .token:not(.keyword) + span:not(.keyword) {
+      padding-left: 0;
+    }
+  </style>
+  <div class="container" contenteditable="true">
+  </div>
+  <ul class="suggestion">
+  </ul>
+  <input type="hidden">
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    const Backspace =  8;
+    const Enter     = 13;
+    const Space     = 32;
+    const Left      = 37;
+    const Up        = 38;
+    const Right     = 39;
+    const Down      = 40;
+    const Delete    = 46;
+    const Sibling = { [Up]: 'previousElementSibling', [Down]: 'nextElementSibling', [Left]: 'previousElementSibling', [Right]: 'nextElementSibling', [Backspace]: 'previousElementSibling', [Delete]: 'nextElementSibling' };
+    const CursorPosition = { [Left]: el => el.innerText.length, [Right]: el => 0, [Backspace]: el => el.innerText.length, [Delete]: 0 };
+    class XSearch extends HTMLElement {
+      static get observedAttributes() {
+        return ['schema', 'value', 'name'];
+      }
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-search2').content;
+        const shadow = this.attachShadow({mode: 'open'});
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          container: shadow.querySelector('.container'),
+          suggestion: shadow.querySelector('.suggestion'),
+          hidden: shadow.querySelector('input[type="hidden"]')
+        }
+
+        this.el.container.addEventListener('click', e => {
+          this.el.container.classList.add('focus'); 
+        })
+        this.el.container.addEventListener('blur', e => {
+          this.el.container.classList.remove('focus');
+          this.value = ([...this.el.container.childNodes]).map(n => {
+            return n.constructor === HTMLSpanElement ? n.dataset.value : n.textContent;
+          }).join('');
+        })
+        this.el.container.addEventListener('keydown', e => {
+          this._setCurrentRange(this.shadowRoot.getSelection());
+          const range = this._getCurrentRange();
+          
+          if (range === null) 
+            return;
+          
+          const word = this._getCurrentWord(range);
+          this._suggestion(word, range.startContainer);
+
+          if ((e.which === Up || e.which === Down) && this.el.suggestion.firstChild) {
+            const active = this.el.suggestion.querySelector('.active');
+            if (!active) {
+              this.el.suggestion.firstChild.classList.add('active');
+            } 
+            else if (active[Sibling[e.which]]){
+              active.classList.remove('active');
+              active[Sibling[e.which]].classList.add('active');
+            }
+          }
+          else if (e.which === Enter) {
+            const active = this.el.suggestion.querySelector('.active');            
+            if (active) {
+              this._select(active, range);
+            }
+            e.preventDefault();
+          }
+          else if (e.which === Space) {
+            const span = document.createElement('span');
+            
+            const text = range.startContainer;
+            if (text) {
+              span.appendChild(text)
+              this.el.container.appendChild(span)
+            }
+            const tail = document.createTextNode(' ');
+            this.el.container.appendChild(tail)
+            
+            this.shadowRoot.getSelection().setPosition(tail,0);
+          }
+        })
+        this.el.suggestion.addEventListener('mouseover', e => {
+          for(let item of this.el.suggestion.querySelectorAll('.active')) {
+            item.classList.remove('active');
+          }
+          this.el.suggestion.querySelector('li:hover').classList.add('active');
+        })
+        this.el.suggestion.addEventListener('click', e => { 
+          const range = this._getCurrentRange();
+          if (range === null)
+            return;
+          
+          for(var i = 0; i < e.path.length && e.path[i].constructor !== HTMLLIElement; i++);
+          this._select(e.path[i], range); 
+        })
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (attrName === 'schema') {
+          parseSchema(newVal).then(schema => {
+            this._datalist = extract(schema);
+          }).catch(err => {
+            this._datalist = [];
+          }).then(() => {
+            this._suggestion();
+            this._setValue(this.getAttribute('value'));
+          });
+        }
+        else if (attrName === 'value') {
+          this._setValue(newVal);
+        }
+        else if (attrName === 'name') {
+          this.el.hidden.setAttribute('name', newVal);
+        }
+      }
+      _setSchema(url) {
+        parseSchema(newVal).then(schema => {
+          this._datalist = extract(schema);
+        }).catch(err => {
+          this._datalist = [];
+        }).then(() => {
+          this._suggestion();
+        });
+      }
+      _setValue(htmlValue) {
+        const value = htmlValue.decodeHTML();
+        if (value === this.el.hidden.value || !Array.isArray(this._datalist))
+          return;
+
+        this.el.hidden.value = value;
+
+        const tokens = value.split(/\s/).map(v => {
+          const datum = this._datalist.find(d => d.value === v);
+          return datum ? `<span class="token keyword" data-value="${datum.value}">${datum.label}</span>` : v;
+        });
+        this.el.container.innerHTML = tokens.join(' ');
+      }
+      _suggestion(hint, anchor) {
+        const suggestion = this.shadowRoot.querySelector('.suggestion');
+        const active = suggestion.querySelector('.active');
+        const index  = (function() {
+          for(let i = 0; i < suggestion.children.length; i++) 
+            if (suggestion.children[i].classList.contains('active'))
+              return i;
+          return -1;
+        }());
+
+        suggestion.innerHTML 
+          = this._datalist.filter(d => d.label.indexOf(hint) !== -1 || d.value.indexOf(hint) !== -1)
+                .map((s,i) => `<li class="${i===index?'active':''}"><span>${s.value}</span><span>${s.label}</span></li>`).join('');
+
+        if (!anchor || !anchor.previousElementSibling || anchor === this.el.container)
+          suggestion.style = 'left:0;';
+        else{
+          let left = anchor.previousElementSibling.offsetWidth;
+          const range = this._getCurrentRange();
+          if (range) {
+            const wordRange = getCurrentWordRange(range);
+            left += wordRange.start * 8;
+            console.log(wordRange)
+          }
+          left += 16;
+          suggestion.style = `left: ${left}px`;
+        }
+        requestIdleCallback(() => {
+          if (suggestion && suggestion.children.length > 0 && suggestion.children.length <= index)
+            suggestion.lastChild.classList.add('active');
+        })
+      }
+      _setCurrentRange(selection) {
+        if (selection && selection.rangeCount > 0) {
+          this._range = selection.getRangeAt(0);
+        } else {
+          this._range = null;
+        }
+      }
+      _getCurrentRange() {
+        return this._range;
+      }
+      _getCurrentWord(range) {
+        const wordRange = getCurrentWordRange(range);
+        if (wordRange === null)
+          return null;
+
+        return wordRange.node.textContent.slice(wordRange.start, wordRange.end);
+      }
+      _select(elem, range) {
+        const label = elem.querySelector('span:last-child').innerText;
+        const value = elem.querySelector('span:first-child').innerText;
+        const token = document.createElement('span');
+        token.setAttribute('contenteditable', false);
+        token.classList.add('token');
+        token.classList.add('keyword');
+        token.dataset.value = value;
+        token.innerText = label;
+        const wordRange = getCurrentWordRange(range);
+        const left = wordRange.node.textContent.slice(0, wordRange.start);
+        const right = wordRange.node.textContent.slice(wordRange.end);
+        const tail = document.createTextNode(' ' + right);
+        wordRange.node.textContent = left;
+        if (wordRange.node === this.el.container) {
+          wordRange.node.appendChild(token);
+          wordRange.node.appendChild(tail);
+        }
+        else if (wordRange.node.nextSibling) {
+          wordRange.node.parentElement.insertBefore(token, wordRange.node.nextSibling);
+          wordRange.node.parentElement.insertBefore(tail, wordRange.node.nextSibling);
+        }
+        else {
+          wordRange.node.parentElement.appendChild(token);
+          wordRange.node.parentElement.appendChild(tail);
+        }
+        this.shadowRoot.getSelection().setPosition(tail,0);
+      }
+      get value() {
+        return this.el.hidden.value;
+      }
+      set value(value) {
+        this.setAttribute('value', value.encodeHTML());
+      }
+    }
+    customElements.define('aiplugs-search2', XSearch);
+
+    function getCurrentWordRange(range) {
+      if (!range.startContainer || ((range.startContainer && range.endContainer) && range.startContainer !== range.endContainer))
+        return null;
+      
+      const pos = range.startOffset;
+      const text = range.startContainer.textContent;
+      let start = pos - 1;
+      while(start >= 0) {
+        const c = text.charAt(start);
+        if (c === ' ')
+          break;
+        start--;
+      }
+      let end = pos;
+      while(end < text.length) {
+        const c = text.charAt(end);
+        if (c === ' ')
+          break;
+        end++;
+      }
+      return {
+        node: range.startContainer,
+        start: start + 1,
+        end: end,
+      };
+    }
+
+    function extract(schema) {
+      const arr = [];
+      const f = (schema, path, name) => {
+        if (schema.type === 'object') {
+          for(let key in schema.properties) {
+            f(schema.properties[key], path + '.' + key, key);
+          }
+        }
+        else if (schema.type === 'array') {
+          f(schema.items, path + '[]', name);
+        }
+        else {
+          arr.push({ label: schema.title || name, value: path});
+        }
+      }
+      f(schema, '$', '$');
+      return arr;
+    }
+
+    function parseSchema(schemaUrl) {
+      return $RefParser.parse(schemaUrl).then(schema => {
+        const hash = schemaUrl.indexOf('#');
+
+        if (hash === -1)
+          return schema;
+        
+        return schemaUrl
+                .slice(hash+1)
+                .split('/')
+                .filter(_ => _)
+                .reduce((s, key) => s[key], schema);
+      });
+    }
+    function getTextWidth(text, font) {
+      // re-use canvas object for better performance
+      var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+      var context = canvas.getContext("2d");
+      context.font = font;
+      var metrics = context.measureText(text);
+      return metrics.width;
+    }
+    function css( element, property ) {
+      return window.getComputedStyle( element, null ).getPropertyValue( property );
+    }
+  }())
+</script><template id="aiplugs-search">
+<style>
+  :host {
+    border-radius: 4px;
+    border: 1px solid var(--color-text-secondary);
+    padding: 12px 16px;
+    display: block;
+  }
+  :host(.active) {
+    border-color: var(--color-primary);
+  }
+  #container {
+    position: relative;
+    top: 0;
+    left: 0;
+    height: 1em;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  #cursor {
+    position: absolute;
+    left: 0;
+    outline: none;
+    background: transparent;
+    min-width: 16px;
+  }
+  #suggestion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: table-cell;
+  }
+  .token {
+    font-size: 16px;    
+  }
+</style>
+<div id="container">
+  <span id="cursor" contenteditable="true"></span>
+  <ul id="suggestion"></ul>
+</div>
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    const Backspace =  8;
+    const Enter     = 13;
+    const Space     = 32;
+    const Left      = 37;
+    const Up        = 38;
+    const Right     = 39;
+    const Down      = 40;
+    const Delete    = 46;
+    const FontSize = 16;
+    class XSearch extends HTMLElement {
+      static get observedAttributes() {
+        return ['schema', 'value', 'name'];
+      }
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-search').content;
+        const shadow = this.attachShadow({mode: 'open'});
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          cursor: shadow.getElementById('cursor'),
+          container: shadow.getElementById('container'),
+          suggestion: shadow.getElementById('suggestion'),
+        }
+
+        this.el.container.addEventListener('click', e => { 
+          this.el.cursor.focus()
+          this.classList.add('active')
+          this.moveCursor(e.layerX)
+        })
+
+        this.el.cursor.addEventListener('blur', () => {
+          this.classList.remove('active')
+        })
+        
+        this.el.cursor.addEventListener('keydown', this.onKeydown.bind(this))
+      }
+      onKeydown(ev) {
+        //ev.preventDefault();
+        // const token = this.el.container.querySelector('.token');
+        if (ev.which === Space) {
+          this.appendToken()
+        }
+        // if (ev.key === 'Backspace') {
+        //   token.textContent = token.textContent.slice(0, -1);
+        // }
+        // else if (ev.key === 'Process') {
+
+        // }
+        // else if (ev.key === 'Enter') {
+        //   token.textContent += this.el.cursor.value;
+        // }
+        // else {
+        //   token.textContent += ev.key
+        // }
+        //this.resizeCursor();
+      }
+      onKeyup(ev) {
+        
+      }
+      appendToken() {
+        const token = document.createElement('span')
+        token.classList.add('token')
+        token.innerText = this.el.cursor.innerText
+        this.el.container.insertBefore(token, this.el.cursor)
+        this.resetCursor()
+        this.el.cursor.style.left = (token.offsetLeft + token.offsetWidth) + 'px';
+      }
+      resetCursor() {
+        this.el.cursor.innerText = ''
+        // this.el.cursor.style.width = FontSize + 'px'
+      }
+      resizeCursor() {
+        const text = this.el.cursor.innerText;
+        const width =  getTextWidth(text, css(this.el.cursor, 'font'))
+        this.el.cursor.style.width = width + 'px'
+      }
+      moveCursor(x) {
+        const tokens = this.el.container.querySelectorAll('.token')
+        if (tokens.length == 0) {
+          return
+        }
+
+        let token;
+        for (token of tokens) {
+          if (token.offsetLeft + token.offsetWidth >= x) {
+            break;
+          }
+        }
+
+        let left = 0;
+        const chars = token.innerText.split('')
+        for (let i = 0; i < token.innerText.length; i++) {
+          const text = token.innerText.slice(0, i+1)
+          left = token.offsetLeft + getTextWidth(text, css(token, 'font'))
+          if ( left >= x) {
+            break;
+          }
+        }
+
+        this.el.cursor.style.left = left + 'px'
+      }
+    }
+    customElements.define('aiplugs-search3', XSearch);
+    const wide = (function() {
+      const range = [[0x4e00, 0x9fd5],[0x3400, 0x4dff],[0x20000, 0x2a6ff],[0x2a700, 0x2b734],[0x2b740, 0x2b81f],[0x2b820, 0x2ceaf],[0x2ceb0, 0x2ebe0]]
+      return code => range.some(r => r[0] <= code && code <= r[1])
+    }())
+    const calcCharSize = c => wide(c) ? FontSize : FontSize / 2
+
+    function getTextWidth(text, font) {
+      // re-use canvas object for better performance
+      var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+      var context = canvas.getContext("2d");
+      context.font = font;
+      var metrics = context.measureText(text);
+      return metrics.width;
+    }
+    function css( element, property ) {
+      return window.getComputedStyle( element, null ).getPropertyValue( property );
+    }
+  }())
 </script><template id="aiplugs-tag-input-style">
   <style>
     input {
@@ -1528,7 +2654,6 @@
       outline: none;
       width: 96px;
       color: var(--color-text-secondary);
-      background: var(--color-bg-primary);
     }
     input:focus {
       border-color: var(--color-primary);
@@ -1655,7 +2780,9 @@
           }
         });
         input.addEventListener('blur', e => {
-          this.add(e.target.value);
+          if (e.target.value) {
+            this.add(e.target.value);
+          }
         });
 
         this.el = { input, tags };
