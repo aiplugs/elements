@@ -60,7 +60,7 @@
       "input": {
         "type": "autocomplete",
         "autocomplete": {
-          "url": "/dev/cities.json",
+          "url": "/dev/data/cities.json",
           "paramKey": "hint"
         }
       }
@@ -73,7 +73,7 @@
         "input": {
           "type": "autocomplete",
           "autocomplete": {
-            "url": "/dev/skills.json",
+            "url": "/dev/data/skills.json",
             "paramKey": "hint"
           }
         }

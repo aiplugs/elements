@@ -7,7 +7,6 @@
       outline: none;
       width: 96px;
       color: var(--color-text-secondary);
-      background: var(--color-bg-primary);
     }
     input:focus {
       border-color: var(--color-primary);
@@ -134,7 +133,9 @@
           }
         });
         input.addEventListener('blur', e => {
-          this.add(e.target.value);
+          if (e.target.value) {
+            this.add(e.target.value);
+          }
         });
 
         this.el = { input, tags };

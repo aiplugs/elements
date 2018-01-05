@@ -163,6 +163,9 @@
         this.breadcrumb.path = this.path;
         this.dispatchEvent(new CustomEvent('path.changed', { detail: { path: this.path } }))
       }
+      reload() {
+        this._go();
+      }
       get selectedItem() {
         return this.list.selectedItem;
       }

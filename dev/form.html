@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Form | aiplugs</title>
+  <link rel="import" href="/src/index.html" />
+  <link rel="import" href="/src/theme.html" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <aiplugs-nav-items>
+    <aiplugs-nav-item class="logo">
+      <img slot="icon" src="img/icon.svg" alt="aiplugs" width="32">
+      <span>aiplugs CMS</span>
+    </aiplugs-nav-item>
+    <aiplugs-nav-item class="fold-action">
+      <i slot="icon" class="fa fa-bars"></i>
+    </aiplugs-nav-item>
+    <aiplugs-nav-item>
+      <i slot="icon" class="fa fa-folder"></i>
+      <span>Files</span>
+    </aiplugs-nav-item>
+    <aiplugs-nav-item>
+      <i slot="icon" class="fa fa-database"></i>
+      <span>Collections</span>
+    </aiplugs-nav-item>
+    <aiplugs-nav-items>
+      <aiplugs-nav-item class="active">Blog Posts</aiplugs-nav-item>
+      <aiplugs-nav-item>News</aiplugs-nav-item>
+      <aiplugs-nav-item>Staic Pages</aiplugs-nav-item>
+    </aiplugs-nav-items>
+    <aiplugs-nav-item>
+      <i slot="icon" class="fa fa-cog"></i>
+      <span>Settings</span>
+    </aiplugs-nav-item>
+    <aiplugs-nav-items>
+      <aiplugs-nav-item>Collections</aiplugs-nav-item>
+      <aiplugs-nav-item>Users</aiplugs-nav-item>
+      <aiplugs-nav-item>App Settings</aiplugs-nav-item>
+    </aiplugs-nav-items>
+    <aiplugs-nav-separator></aiplugs-nav-separator>
+    <aiplugs-nav-item slot="bottom">
+      <img slot="icon" src="https://avatars2.githubusercontent.com/u/1011232?s=32&u=332a5b77904556e83686f16105a3355f46c82292&v=4" alt="iwate" width="32">
+      iwate
+    </aiplugs-nav-item>    
+  </aiplugs-nav-items>
+  <main>
+    <section>
+      <header>
+        <aiplugs-actions>
+          <button class="btn primary">Save</button>
+          <button class="btn">Diff</button>
+          <button class="btn">History</button>
+        </aiplugs-actions>
+      </header>
+      <article>
+        <aiplugs-form>
+          <aiplugs-autofields schema="data/schema.json"></aiplugs-autofields>
+        </aiplugs-form>
+      </article>
+    </section>
+    <section>
+    </section>
+  </main>
+  <script src="js/resize.js"></script>
+</body>
+</html>

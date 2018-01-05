@@ -1,7 +1,7 @@
 <template id="aiplugs-columnized-list">
   <style>
-    :host {
-      background-color: var(--color-bas);
+    :host, table {
+      background-color: var(--color-base);
     }
 
     i {
@@ -248,7 +248,7 @@
           return `<tr data-index='${i}'>
                                 <td></td>
                                 ${this.columns.map((col, idx) => {
-              if (idx == 0)
+              if (idx == 0 && item.icon)
                 return `<td class='${item.type}' title='${item[col]}'><i>${item.icon}</i>${item[col]}</td>`
               else
                 return `<td>${item[col]}</td>`

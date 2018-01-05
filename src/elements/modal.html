@@ -1,0 +1,37 @@
+<template id="aiplugs-modal">
+  <style>
+    :host {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+      background: var(--color-base);
+    }
+    div {
+      width: 90vw;
+      height: 90vh;
+      max-width: 60rem;
+      max-height: 40rem;
+      display: flex;
+      flex-direction:column;
+    }
+  </style>
+  <div>
+    <slot></slot>
+  </div>
+</template>
+<script>
+  const tree = document.currentScript.ownerDocument;
+  (function(){
+    class XModal extends HTMLElement {
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-modal').content;
+        const shadow = this.attachShadow({mode:'open'});
+        shadow.appendChild(template.cloneNode(true));
+      }
+    }
+    customElements.define('aiplugs-modal', XModal);
+  }())
+</script>
