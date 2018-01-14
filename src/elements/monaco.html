@@ -1,0 +1,93 @@
+<template id="aiplugs-monaco">
+  <div class="aiplugs-editor" style="height: 100%;"></div>
+  <textarea style="display:none;"></textarea>
+</template>
+<script src="//unpkg.com/monaco-editor/min/vs/loader.js"></script>
+<script>
+  (function(){
+    require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });    
+    const tree = document.currentScript.ownerDocument;
+    class XMonaco extends HTMLElement {
+      constructor() {
+        super();
+        this._init = new Promise((resolve, reject) => {
+          require(['vs/editor/editor.main'], () => {
+            const factory = () => {
+              if (this._elem) {
+                this.editor = monaco.editor.create(this._elem, this._options);
+                resolve(this.editor);
+              }
+              else {
+                setTimeout(factory, 10);   
+              }
+            }
+            factory();
+          });
+        });
+      }
+      connectedCallback() {
+        const template = tree.getElementById('aiplugs-monaco').content;
+        this.appendChild(template.cloneNode(true));
+        this._elem = this.querySelector('.aiplugs-editor');
+      }
+      static get observedAttributes() {
+        return ['options', 'value', 'json-schema', 'name'];
+      }
+      attributeChangedCallback(attrName, oldVal, newVal) {
+        if (attrName === 'options') {
+          this._setOptions(JSON.parse(newVal));
+        }
+        else if (attrName === 'options') {
+          this._setValue(newVal);
+        }
+        else if (attrName === 'json-schema') {
+          this._setJsonSchema(newVal);
+        }
+        else if (attrName === 'name') {
+          this.querySelector('textarea').name = newVal;
+        }
+      }
+      _setOptions(opts) {
+        const options = Object.assign({ automaticLayout: true, language: 'html' }, opts || this._options ||  {});
+        if (JSON.stringify(this._options) !== JSON.stringify(options)) {
+          this._options = options;
+          this._init.then(editor => {
+            editor.updateOptions(this.options);
+          })
+        }
+      }
+      _setValue(value) {
+        this._value = value || this._value || '';
+        this._init.then(editor => {
+          editor.setValue(this._value);
+        })
+      }
+      _setJsonSchema(uri) {
+        fetch(uri).then(res => res.json()).then(schema => {
+          this._init.then(editor => {
+            if (monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
+              const schemas = monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
+              window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
+            }
+          })
+        }) 
+      }
+      set options(opts) {
+        this.setAttribute('options', opts||'')
+      }
+      get options() {
+        return this.getAttribute('options');
+      }
+      set value(val) {
+        this.setAttribute('value', val||'')
+      }
+      get value() {
+        if (!this.editor) {
+          return '';
+        }
+        return this.getModel().getValue();
+      }
+    }
+    customElements.define('aiplugs-monaco', XMonaco);
+  }())
+</script>
