@@ -7,11 +7,14 @@
   <title>elements | aiplugs</title>
   <link rel="import" href="/src/index.html" />
   <link rel="import" href="/src/theme.html" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa" >
-  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa" > 
   <style>
     .logo {
       font-family: Comfortaa;
+    }
+    aiplugs-monaco {
+      display: block;
+      height: 500px;
     }
   </style>
   
@@ -22,6 +25,19 @@
     <p>Custom elements made by vanilla js and html5 without polymer.</p>
   </header>
   <main>
+      <article>
+          <h2>Monaco</h2>
+          <div>
+            <aiplugs-monaco options="{&quot;language&quot;:&quot;json&quot;}" json-schema="http://json-schema.org/draft-04/schema#"></aiplugs-monaco>
+          </div>
+          <script>
+            window.MonacoEnvironment = {
+              getWorkerUrl: function (workerId, label) {
+                return '/dev/js/monaco-editor-worker-loader-proxy.js';
+              }
+            };
+          </script>
+        </article>
     <article>
       <h2>Tag</h2>
       <div>
@@ -68,7 +84,8 @@
           })
         </script>
       </div>
-    </article> 
+    </article>
+    
     <article>
       <h2>Array</h2>
       <div>
