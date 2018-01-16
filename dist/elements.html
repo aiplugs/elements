@@ -991,7 +991,7 @@
     }
     const codeField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'code',
-      template: (name, obj, value, required) => `<aiplugs-monaco name="${name}">${value||''}</aiplugs-monaco>`
+      template: (name, obj, value, required) => `<textarea name="${name}">${value||''}</textarea>`
     }
     const wysiwygField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'wysiwyg',
@@ -1610,22 +1610,17 @@
     customElements.define('aiplugs-modal', XModal);
   }())
 </script><template id="aiplugs-monaco">
-  <link rel="stylesheet" href='//unpkg.com/monaco-editor/min/vs/editor/editor.main.css'> 
   <div class="aiplugs-editor" style="height: 100%;"></div>
   <textarea style="display:none;"></textarea>
 </template>
 <script src="//unpkg.com/monaco-editor/min/vs/loader.js"></script>
 <script>
   (function(){
-    require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });
+    require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });    
     const tree = document.currentScript.ownerDocument;
     class XMonaco extends HTMLElement {
       constructor() {
         super();
-        const template = tree.getElementById('aiplugs-monaco').content;
-        const shadow = this.attachShadow({ mode: 'open' })
-        shadow.appendChild(template.cloneNode(true))
-        this._elem = shadow.querySelector('.aiplugs-editor')
         this._init = new Promise((resolve, reject) => {
           require(['vs/editor/editor.main'], () => {
             const factory = () => {
@@ -1641,6 +1636,11 @@
           });
         });
       }
+      connectedCallback() {
+        const template = tree.getElementById('aiplugs-monaco').content;
+        this.appendChild(template.cloneNode(true));
+        this._elem = this.querySelector('.aiplugs-editor');
+      }
       static get observedAttributes() {
         return ['options', 'value', 'json-schema', 'name'];
       }
@@ -1655,7 +1655,7 @@
           this._setJsonSchema(newVal);
         }
         else if (attrName === 'name') {
-          this.shadowRoot.querySelector('textarea').name = newVal;
+          this.querySelector('textarea').name = newVal;
         }
       }
       _setOptions(opts) {
