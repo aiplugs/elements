@@ -88,11 +88,10 @@
         const shadow = this.attachShadow({ mode: 'open' });
         shadow.appendChild(template.cloneNode(true));
 
-        [...this.attributes].forEach(attr => form.setAttribute(attr.name, attr.value));
-
         const form = shadow.querySelector('form');
         
         setTimeout(() => {
+          [...this.attributes].forEach(attr => form.setAttribute(attr.name, attr.value));        
           const submit = this._findSubmit();
           if (submit) {
             submit.addEventListener('click', e => {
