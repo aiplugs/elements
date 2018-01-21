@@ -853,6 +853,7 @@
 <script>
   (function () {
     const tree = document.currentScript.ownerDocument;
+    let monacoWorker = '';
     class XFields extends HTMLElement {
       constructor() {
         super();
@@ -862,11 +863,16 @@
         this.el = { container: shadow.querySelector('div') };
       }
       static get observedAttributes() {
-        return ["schema"];
+        return ['schema', 'monaco-worker'];
       }
       attributeChangedCallback(attrName, oldVal, newVal) {
         if (newVal) {
-          this._init(newVal);
+          if (attrName == 'schema') {
+            this._init(newVal);
+          }
+          else if (attrName == 'monaco-worker') {
+            monacoWorker = newVal;
+          }
         }
       }
       _parseSchema(schemaUrl) {
@@ -991,7 +997,16 @@
     }
     const codeField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'code',
-      template: (name, obj, value, required) => `<textarea name="${name}">${value||''}</textarea>`
+      template: (name, obj, value, required) => {
+        const opts = obj.input.code;
+        const schema = opts['json.schema']
+        const worker = monacoWorker;
+        return `<aiplugs-monaco name='${name}'
+                                ${opts?`options='${JSON.stringify(opts)}'`:''} 
+                                ${schema?`json-schema="${schema}"`:''} 
+                                ${worker?`worker="${worker}"`:''} 
+                                style="height: 500px;"></aiplugs-monaco>`
+      }
     }
     const wysiwygField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'wysiwyg',
@@ -1002,7 +1017,7 @@
       template: (name, obj, value, required, next) => {
         const values = value || [];
         const _name = obj.items.type === 'object' 
-                    ? index => typeof index !== 'number' ? `${name}[{{index}}]` : `${name}[${index}]` 
+                    ? index => typeof index !== 'number' ? `${name||''}[{{index}}]` : `${name||''}[${index}]` 
                     : index => `${name}[]`;
         return `
         <aiplugs-array min="${obj.minItems || '0'}" max="${obj.maxItems || '*'}" index="${values.length}">
@@ -1610,36 +1625,36 @@
     customElements.define('aiplugs-modal', XModal);
   }())
 </script><template id="aiplugs-monaco">
-  <div class="aiplugs-editor" style="height: 100%;"></div>
+  <iframe src="./monaco-iframe.html?worker=/dev/js/monaco-editor-worker-loader-proxy.js" style="width: 100%; height: 100%;" scrolling="no" frameborder="0"></iframe>
   <textarea style="display:none;"></textarea>
 </template>
-<script src="//unpkg.com/monaco-editor/min/vs/loader.js"></script>
 <script>
   (function(){
-    require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });    
+    window.aiplugsMonaco = new URL(document.currentScript.baseURI + "/../monaco-iframe.html").href;
     const tree = document.currentScript.ownerDocument;
     class XMonaco extends HTMLElement {
       constructor() {
         super();
-        this._init = new Promise((resolve, reject) => {
-          require(['vs/editor/editor.main'], () => {
-            const factory = () => {
-              if (this._elem) {
-                this.editor = monaco.editor.create(this._elem, this._options);
-                resolve(this.editor);
-              }
-              else {
-                setTimeout(factory, 10);   
-              }
-            }
-            factory();
-          });
-        });
-      }
-      connectedCallback() {
         const template = tree.getElementById('aiplugs-monaco').content;
-        this.appendChild(template.cloneNode(true));
-        this._elem = this.querySelector('.aiplugs-editor');
+        const shadow = this.attachShadow({ mode: 'open' });
+        const worker = this.getAttribute('worker');
+        template.querySelector('iframe').src = window.aiplugsMonaco + `?worker=${worker}`;
+        shadow.appendChild(template.cloneNode(true));
+
+        const textarea = shadow.querySelector('textarea');
+        const iframe = shadow.querySelector('iframe');
+        this._init = new Promise((resolve, reject) => {
+          iframe.addEventListener('load', () => {
+            resolve(iframe.contentWindow.init);
+          })
+        }).then(init => {
+          this.editor = init.editor;
+          this.editor.onDidBlurEditor(() =>{
+            textarea.value = this.editor.getValue();
+          })
+          return init;
+        })
+        this.el = { textarea };
       }
       static get observedAttributes() {
         return ['options', 'value', 'json-schema', 'name'];
@@ -1655,30 +1670,30 @@
           this._setJsonSchema(newVal);
         }
         else if (attrName === 'name') {
-          this.querySelector('textarea').name = newVal;
+          this.el.textarea.name = newVal;
         }
       }
       _setOptions(opts) {
         const options = Object.assign({ automaticLayout: true, language: 'html' }, opts || this._options ||  {});
         if (JSON.stringify(this._options) !== JSON.stringify(options)) {
           this._options = options;
-          this._init.then(editor => {
-            editor.updateOptions(this.options);
+          this._init.then(init => {
+            init.updateOptions(options);
           })
         }
       }
       _setValue(value) {
         this._value = value || this._value || '';
-        this._init.then(editor => {
-          editor.setValue(this._value);
+        this._init.then(init => {
+          init.editor.setValue(this._value);
         })
       }
       _setJsonSchema(uri) {
         fetch(uri).then(res => res.json()).then(schema => {
-          this._init.then(editor => {
-            if (monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
-              const schemas = monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
-              window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
+          this._init.then(init => {
+            if (init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
+              const schemas = init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
+              init.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
             }
           })
         }) 
@@ -1690,13 +1705,13 @@
         return this.getAttribute('options');
       }
       set value(val) {
-        this.setAttribute('value', val||'')
+        this._init().then(init => {
+          init.editor.setValue(val);
+          this.el.textarea.value = val;
+        })
       }
       get value() {
-        if (!this.editor) {
-          return '';
-        }
-        return this.getModel().getValue();
+        return this.el.textarea.value;
       }
     }
     customElements.define('aiplugs-monaco', XMonaco);

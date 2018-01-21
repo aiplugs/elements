@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>monaco editor</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #editor {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <script src="//unpkg.com/monaco-editor/min/vs/loader.js"></script>
+</head>
+<body>
+  <div id="editor"></div>
+  <script>
+    var qp = (location.search || '?').slice(1).split('&').map(kv => kv.split('=')).reduce((obj, kv) => { obj[kv[0]] = kv[1]; return obj; }, {});
+    if (qp.worker) {
+      window.MonacoEnvironment = { getWorkerUrl: function (workerId, label) { return qp.worker; } };
+    }
+    window.init = new Promise((resolve, reject) => {
+      require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });
+      require(['vs/editor/editor.main'], () => {
+        const editor = monaco.editor.create(document.getElementById('editor'), { language: 'html' });
+        const updateOptions = opts => {
+          const options = Object.assign({ automaticLayout: true, language: 'html' }, opts || {});
+          editor.updateOptions(options) 
+          monaco.editor.setModelLanguage(editor.getModel(), options.language);
+        }
+        resolve({editor, monaco, updateOptions});
+      });
+    });
+  </script>
+</body>
+</html>
