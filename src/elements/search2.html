@@ -1,0 +1,168 @@
+<template id="aiplugs-search">
+<style>
+  :host {
+    border-radius: 4px;
+    border: 1px solid var(--color-text-secondary);
+    padding: 12px 16px;
+    display: block;
+  }
+  :host(.active) {
+    border-color: var(--color-primary);
+  }
+  #container {
+    position: relative;
+    top: 0;
+    left: 0;
+    height: 1em;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  #cursor {
+    position: absolute;
+    left: 0;
+    outline: none;
+    background: transparent;
+    min-width: 16px;
+  }
+  #suggestion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: table-cell;
+  }
+  .token {
+    font-size: 16px;    
+  }
+</style>
+<div id="container">
+  <span id="cursor" contenteditable="true"></span>
+  <ul id="suggestion"></ul>
+</div>
+</template>
+<script>
+  (function(){
+    const tree = document.currentScript.ownerDocument;
+    const Backspace =  8;
+    const Enter     = 13;
+    const Space     = 32;
+    const Left      = 37;
+    const Up        = 38;
+    const Right     = 39;
+    const Down      = 40;
+    const Delete    = 46;
+    const FontSize = 16;
+    class XSearch extends HTMLElement {
+      static get observedAttributes() {
+        return ['schema', 'value', 'name'];
+      }
+      constructor() {
+        super();
+        const template = tree.getElementById('aiplugs-search').content;
+        const shadow = this.attachShadow({mode: 'open'});
+        shadow.appendChild(template.cloneNode(true));
+
+        this.el = {
+          cursor: shadow.getElementById('cursor'),
+          container: shadow.getElementById('container'),
+          suggestion: shadow.getElementById('suggestion'),
+        }
+
+        this.el.container.addEventListener('click', e => { 
+          this.el.cursor.focus()
+          this.classList.add('active')
+          this.moveCursor(e.layerX)
+        })
+
+        this.el.cursor.addEventListener('blur', () => {
+          this.classList.remove('active')
+        })
+        
+        this.el.cursor.addEventListener('keydown', this.onKeydown.bind(this))
+      }
+      onKeydown(ev) {
+        //ev.preventDefault();
+        // const token = this.el.container.querySelector('.token');
+        if (ev.which === Space) {
+          this.appendToken()
+        }
+        // if (ev.key === 'Backspace') {
+        //   token.textContent = token.textContent.slice(0, -1);
+        // }
+        // else if (ev.key === 'Process') {
+
+        // }
+        // else if (ev.key === 'Enter') {
+        //   token.textContent += this.el.cursor.value;
+        // }
+        // else {
+        //   token.textContent += ev.key
+        // }
+        //this.resizeCursor();
+      }
+      onKeyup(ev) {
+        
+      }
+      appendToken() {
+        const token = document.createElement('span')
+        token.classList.add('token')
+        token.innerText = this.el.cursor.innerText
+        this.el.container.insertBefore(token, this.el.cursor)
+        this.resetCursor()
+        this.el.cursor.style.left = (token.offsetLeft + token.offsetWidth) + 'px';
+      }
+      resetCursor() {
+        this.el.cursor.innerText = ''
+        // this.el.cursor.style.width = FontSize + 'px'
+      }
+      resizeCursor() {
+        const text = this.el.cursor.innerText;
+        const width =  getTextWidth(text, css(this.el.cursor, 'font'))
+        this.el.cursor.style.width = width + 'px'
+      }
+      moveCursor(x) {
+        const tokens = this.el.container.querySelectorAll('.token')
+        if (tokens.length == 0) {
+          return
+        }
+
+        let token;
+        for (token of tokens) {
+          if (token.offsetLeft + token.offsetWidth >= x) {
+            break;
+          }
+        }
+
+        let left = 0;
+        const chars = token.innerText.split('')
+        for (let i = 0; i < token.innerText.length; i++) {
+          const text = token.innerText.slice(0, i+1)
+          left = token.offsetLeft + getTextWidth(text, css(token, 'font'))
+          if ( left >= x) {
+            break;
+          }
+        }
+
+        this.el.cursor.style.left = left + 'px'
+      }
+    }
+    customElements.define('aiplugs-search3', XSearch);
+    const wide = (function() {
+      const range = [[0x4e00, 0x9fd5],[0x3400, 0x4dff],[0x20000, 0x2a6ff],[0x2a700, 0x2b734],[0x2b740, 0x2b81f],[0x2b820, 0x2ceaf],[0x2ceb0, 0x2ebe0]]
+      return code => range.some(r => r[0] <= code && code <= r[1])
+    }())
+    const calcCharSize = c => wide(c) ? FontSize : FontSize / 2
+
+    function getTextWidth(text, font) {
+      // re-use canvas object for better performance
+      var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+      var context = canvas.getContext("2d");
+      context.font = font;
+      var metrics = context.measureText(text);
+      return metrics.width;
+    }
+    function css( element, property ) {
+      return window.getComputedStyle( element, null ).getPropertyValue( property );
+    }
+  }())
+</script>
