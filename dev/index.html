@@ -26,18 +26,18 @@
   </header>
   <main>
       <article>
-          <h2>Monaco</h2>
-          <div>
-            <aiplugs-monaco options="{&quot;language&quot;:&quot;json&quot;}" json-schema="http://json-schema.org/draft-04/schema#"></aiplugs-monaco>
-          </div>
-          <script>
-            window.MonacoEnvironment = {
-              getWorkerUrl: function (workerId, label) {
-                return '/dev/js/monaco-editor-worker-loader-proxy.js';
-              }
-            };
-          </script>
-        </article>
+        <h2>Monaco</h2>
+        <div>
+          <aiplugs-monaco options='{"language":"json"}' json-schema="http://json-schema.org/draft-04/schema#" worker="/dev/js/monaco-editor-worker-loader-proxy.js" style="height: 500px;"></aiplugs-monaco>
+          <button id="save">Save</button>
+        </div>
+        <script>
+          document.getElementById('save').addEventListener('click', () => {
+            const value = document.querySelector('aiplugs-monaco').value;
+            console.log(value);
+          })
+        </script>
+      </article>
     <article>
       <h2>Tag</h2>
       <div>
@@ -128,7 +128,7 @@
       <h2>Auto Fields</h2>
       <div>
         <aiplugs-form id="form2">
-          <aiplugs-autofields schema="/dev/data/schema.json">
+          <aiplugs-autofields schema="/dev/data/schema.json" monaco-worker="/dev/js/monaco-editor-worker-loader-proxy.js">
             <script type="application/json">
             {
               "username": "aiplugs",

@@ -111,6 +111,17 @@
     "agreement": {
       "title": "I agree to terms",
       "type": "boolean"
+    },
+    "json": {
+      "title": "JSON",
+      "type": "string",
+      "input": {
+        "type": "code",
+        "code": {
+          "json.schema": "http://json-schema.org/draft-04/schema#",
+          "language": "json"
+        }
+      }
     }
   },
   "required": [ "username", "email" ]

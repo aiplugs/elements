@@ -171,6 +171,7 @@
 <script>
   (function () {
     const tree = document.currentScript.ownerDocument;
+    let monacoWorker = '';
     class XFields extends HTMLElement {
       constructor() {
         super();
@@ -180,11 +181,16 @@
         this.el = { container: shadow.querySelector('div') };
       }
       static get observedAttributes() {
-        return ["schema"];
+        return ['schema', 'monaco-worker'];
       }
       attributeChangedCallback(attrName, oldVal, newVal) {
         if (newVal) {
-          this._init(newVal);
+          if (attrName == 'schema') {
+            this._init(newVal);
+          }
+          else if (attrName == 'monaco-worker') {
+            monacoWorker = newVal;
+          }
         }
       }
       _parseSchema(schemaUrl) {
@@ -309,7 +315,16 @@
     }
     const codeField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'code',
-      template: (name, obj, value, required) => `<textarea name="${name}">${value||''}</textarea>`
+      template: (name, obj, value, required) => {
+        const opts = obj.input.code;
+        const schema = opts['json.schema']
+        const worker = monacoWorker;
+        return `<aiplugs-monaco name='${name}'
+                                ${opts?`options='${JSON.stringify(opts)}'`:''} 
+                                ${schema?`json-schema="${schema}"`:''} 
+                                ${worker?`worker="${worker}"`:''} 
+                                style="height: 500px;"></aiplugs-monaco>`
+      }
     }
     const wysiwygField = {
       condition: obj => obj.type === 'string' && !!obj.input && obj.input.type === 'wysiwyg',
@@ -320,7 +335,7 @@
       template: (name, obj, value, required, next) => {
         const values = value || [];
         const _name = obj.items.type === 'object' 
-                    ? index => typeof index !== 'number' ? `${name}[{{index}}]` : `${name}[${index}]` 
+                    ? index => typeof index !== 'number' ? `${name||''}[{{index}}]` : `${name||''}[${index}]` 
                     : index => `${name}[]`;
         return `
         <aiplugs-array min="${obj.minItems || '0'}" max="${obj.maxItems || '*'}" index="${values.length}">
