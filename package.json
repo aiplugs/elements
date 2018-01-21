@@ -1,6 +1,6 @@
 {
   "name": "aiplugs-elements",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "description": "aiplugs custom elements",
   "main": "index.js",
   "scripts": {
