@@ -37,6 +37,7 @@
         resolve({editor, monaco, updateOptions});
       });
     });
+    window.parent.postMessage('monaco.iframe.onload', window.parent.location.origin);
   </script>
 </body>
 </html>
