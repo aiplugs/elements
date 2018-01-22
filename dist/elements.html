@@ -1637,7 +1637,7 @@
         const template = tree.getElementById('aiplugs-monaco').content;
         const shadow = this.attachShadow({ mode: 'open' });
         const worker = this.getAttribute('worker');
-        template.querySelector('iframe').src = `//aiplugs.github.io/elements/monaco-iframe.html?$parent={location.origin}`
+        template.querySelector('iframe').src = `//aiplugs.github.io/elements/monaco-iframe.html?parent=${location.origin}`
         shadow.appendChild(template.cloneNode(true));
 
         const textarea = shadow.querySelector('textarea');
