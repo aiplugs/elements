@@ -1640,8 +1640,9 @@
         shadow.appendChild(template.cloneNode(true));
 
         const textarea = shadow.querySelector('textarea');
+        const iframe = shadow.querySelector('iframe');
         this._init = new Promise((resolve, reject) => {
-          const origin = new URL(window.aiplugsMonaco).origin;
+          const origin = new URL(iframe.src).origin;
           window.addEventListener('message', evt => {
             if (evt.origin === origin && evt.data === 'monaco.iframe.onload') {
               resolve(evt.source.init);
