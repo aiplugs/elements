@@ -18,6 +18,7 @@
 <body>
   <div id="editor"></div>
   <script>
+    var qp = (location.search || '?').slice(1).split('&').map(kv => kv.split('=')).reduce((obj, kv) => { obj[kv[0]] = kv[1]; return obj; }, {});
     window.MonacoEnvironment = { getWorkerUrl: function (workerId, label) { return './monaco-editor-worker-loader-proxy.js' } };
     window.init = new Promise((resolve, reject) => {
       require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });
@@ -31,7 +32,7 @@
         resolve({editor, monaco, updateOptions});
       });
     });
-    window.parent.postMessage('monaco.iframe.onload', window.parent.location.origin);
+    window.parent.postMessage('monaco.iframe.onload', qp.parent);
   </script>
 </body>
 </html>
