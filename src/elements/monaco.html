@@ -1,5 +1,5 @@
 <template id="aiplugs-monaco">
-  <iframe src="./monaco-iframe.html?worker=/dev/js/monaco-editor-worker-loader-proxy.js" style="width: 100%; height: 100%;" scrolling="no" frameborder="0"></iframe>
+  <embed type="text/html" src="./monaco-iframe.html?worker=/dev/js/monaco-editor-worker-loader-proxy.js" style="width: 100%; height: 100%;" scrolling="no" frameborder="0"></embed>
   <textarea style="display:none;"></textarea>
 </template>
 <script>
@@ -12,7 +12,7 @@
         const template = tree.getElementById('aiplugs-monaco').content;
         const shadow = this.attachShadow({ mode: 'open' });
         const worker = this.getAttribute('worker');
-        template.querySelector('iframe').src = window.aiplugsMonaco + `?worker=${worker}`;
+        template.querySelector('embed').src = window.aiplugsMonaco + `?worker=${worker}`;
         shadow.appendChild(template.cloneNode(true));
 
         const textarea = shadow.querySelector('textarea');
