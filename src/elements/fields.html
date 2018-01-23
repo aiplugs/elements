@@ -171,7 +171,6 @@
 <script>
   (function () {
     const tree = document.currentScript.ownerDocument;
-    let monacoWorker = '';
     class XFields extends HTMLElement {
       constructor() {
         super();
@@ -181,15 +180,12 @@
         this.el = { container: shadow.querySelector('div') };
       }
       static get observedAttributes() {
-        return ['schema', 'monaco-worker'];
+        return ['schema'];
       }
       attributeChangedCallback(attrName, oldVal, newVal) {
         if (newVal) {
           if (attrName == 'schema') {
             this._init(newVal);
-          }
-          else if (attrName == 'monaco-worker') {
-            monacoWorker = newVal;
           }
         }
       }
@@ -318,11 +314,10 @@
       template: (name, obj, value, required) => {
         const opts = obj.input.code;
         const schema = opts['json.schema']
-        const worker = monacoWorker;
         return `<aiplugs-monaco name='${name}'
+                                value='${value||''}'
                                 ${opts?`options='${JSON.stringify(opts)}'`:''} 
                                 ${schema?`json-schema="${schema}"`:''} 
-                                ${worker?`worker="${worker}"`:''} 
                                 style="height: 500px;"></aiplugs-monaco>`
       }
     }
