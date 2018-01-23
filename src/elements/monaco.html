@@ -58,7 +58,7 @@
       _setOptions(options) {
         const opts = Object.assign({ automaticLayout: true, language: 'html' }, options ||  {});
         if (JSON.stringify(this._options) !== JSON.stringify(options)) {
-          this._init.then(psot => {
+          this._init.then(post => {
             post('monaco.update.opts', {opts})
           })
         }
