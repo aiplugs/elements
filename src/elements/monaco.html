@@ -11,7 +11,7 @@
         const template = tree.getElementById('aiplugs-monaco').content;
         const shadow = this.attachShadow({ mode: 'open' });
         const worker = this.getAttribute('worker');
-        template.querySelector('iframe').src = `//aiplugs.github.io/elements/monaco-iframe.html?parent=${location.origin}`
+        template.querySelector('iframe').src = `https://aiplugs.github.io/elements/monaco-iframe.html?parent=${location.origin}`
         shadow.appendChild(template.cloneNode(true));
 
         const textarea = shadow.querySelector('textarea');
@@ -19,17 +19,18 @@
         this._init = new Promise((resolve, reject) => {
           const origin = new URL(iframe.src).origin;
           window.addEventListener('message', evt => {
-            if (evt.origin === origin && evt.data === 'monaco.iframe.onload') {
-              resolve(evt.source.init);
+            if (evt.origin !== origin)
+              return
+
+            const data = JSON.parse(evt.data)
+            if (data.type === 'monaco.created') {
+              resolve(iframe.contentWindow);
             }
+            else if (data.type === 'monaco.blur') {
+              textarea.value = data.value;
+            } 
           })
-        }).then(init => {
-          this.editor = init.editor;
-          this.editor.onDidBlurEditor(() =>{
-            textarea.value = this.editor.getValue();
-          })
-          return init;
-        })
+        });
         this.el = { textarea };
       }
       static get observedAttributes() {
@@ -49,42 +50,28 @@
           this.el.textarea.name = newVal;
         }
       }
-      _setOptions(opts) {
-        const options = Object.assign({ automaticLayout: true, language: 'html' }, opts || this._options ||  {});
+      _setOptions(options) {
+        const opts = Object.assign({ automaticLayout: true, language: 'html' }, options ||  {});
         if (JSON.stringify(this._options) !== JSON.stringify(options)) {
-          this._options = options;
-          this._init.then(init => {
-            init.updateOptions(options);
+          this._init.then(m => {
+            m.postMessage(JSON.stringify({type:'monaco.update.opts', opts }))
           })
         }
       }
       _setValue(value) {
-        this._value = value || this._value || '';
-        this._init.then(init => {
-          init.editor.setValue(this._value);
+        this._init.then(m => {
+          m.postMessage(JSON.stringify({type:'monaco.update.value', value: value || ''})) 
         })
       }
       _setJsonSchema(uri) {
         fetch(uri).then(res => res.json()).then(schema => {
-          this._init.then(init => {
-            if (init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
-              const schemas = init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
-              init.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
-            }
+          this._init.then(m => {
+            m.postMessage(JSON.stringify({type:'monaco.append.jsonschema', uri, schema}))
           })
-        }) 
-      }
-      set options(opts) {
-        this.setAttribute('options', opts||'')
-      }
-      get options() {
-        return this.getAttribute('options');
+        })
       }
       set value(val) {
-        this._init().then(init => {
-          init.editor.setValue(val);
-          this.el.textarea.value = val;
-        })
+        this._setValue(value)
       }
       get value() {
         return this.el.textarea.value;

@@ -18,21 +18,38 @@
 <body>
   <div id="editor"></div>
   <script>
-    var qp = (location.search || '?').slice(1).split('&').map(kv => kv.split('=')).reduce((obj, kv) => { obj[kv[0]] = kv[1]; return obj; }, {});
+    const qp = (location.search || '?').slice(1).split('&').map(kv => kv.split('=')).reduce((obj, kv) => { obj[kv[0]] = kv[1]; return obj; }, {});
     window.MonacoEnvironment = { getWorkerUrl: function (workerId, label) { return './monaco-editor-worker-loader-proxy.js' } };
-    window.init = new Promise((resolve, reject) => {
-      require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });
-      require(['vs/editor/editor.main'], () => {
-        const editor = monaco.editor.create(document.getElementById('editor'), { language: 'html' });
-        const updateOptions = opts => {
-          const options = Object.assign({ automaticLayout: true, language: 'html' }, opts || {});
+    require.config({ paths: { 'vs': '//unpkg.com/monaco-editor/min/vs' } });
+    require(['vs/editor/editor.main'], () => {
+      const editor = monaco.editor.create(document.getElementById('editor'), { language: 'html' });
+      editor.onDidBlurEditor(() =>{
+        window.parent.postMessage(JSON.stringify({type:"monaco.blur", value: editor.getValue()}), qp.parent);
+      })
+      window.addEventListener('message', evt => {
+        if (evt.origin !== qp.parent)
+          return
+        
+        const data = JSON.parse(evt.data)
+        if (data.type === 'monaco.update.opts') {
+          const options = Object.assign({ automaticLayout: true, language: 'html' }, data.opts || {});
           editor.updateOptions(options) 
           monaco.editor.setModelLanguage(editor.getModel(), options.language);
         }
-        resolve({editor, monaco, updateOptions});
-      });
+        else if(data.type === 'monaco.update.value') {
+          editor.setValue(data.value)
+        }
+        else if(data.type === 'monaco.append.jsonschema') {
+          const uri = data.uri
+          const schema = data.schema
+          if (monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
+            const schemas = init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
+            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
+          }
+        }
+      })
+      window.parent.postMessage(JSON.stringify({type:"monaco.created"}), qp.parent);
     });
-    window.parent.postMessage('monaco.iframe.onload', qp.parent);
   </script>
 </body>
 </html>
