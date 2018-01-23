@@ -43,7 +43,7 @@
           const uri = data.uri
           const schema = data.schema
           if (monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.some(s => s.uri === uri) === false) {
-            const schemas = init.monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
+            const schemas = monaco.languages.json.jsonDefaults.diagnosticsOptions.schemas.concat([{ uri, schema }]);
             monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas: schemas });
           }
         }
