@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>WYSIWYG</title>
+  <style>
+    html,
+    body {
+      padding: 0 1px 0 0;
+      margin: 0;
+      box-sizing: border-box;
+      display: block;
+      height: 100%;
+    }
+
+    textarea {
+      display: none;
+    }
+
+    .mce-tinymce {
+      box-shadow: none !important;
+      -moz-box-shadow: none !important;
+      -webkit-box-shadow: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <textarea id="editor"></textarea>
+  <script src="lib/tinymce/js/tinymce/tinymce.min.js"></script>
+  <script>
+    const qp = (location.search || '?').slice(1).split('&').map(kv => kv.split('=')).reduce((obj, kv) => { obj[kv[0]] = kv[1]; return obj; }, {});
+    const id = qp.id;
+    const parentUri = qp.parent;
+    const event = type => `tinymce#${id}.${type}`;
+    const fire = (type, payload = {}) => {
+      payload.type = event(type);
+      window.parent.postMessage(JSON.stringify(payload), parentUri);
+    }
+    function onSave() {
+      fire('change', { content: tinymce.activeEditor.getContent() });
+    }
+    function onSetup(editor) {
+      editor.addButton('fileimage', {
+        icon: 'image',
+        tooltip: 'Insert image',
+        onclick: function () {
+          fire('click.image');
+        }
+      });
+      editor.addButton('filemedia', {
+        icon: 'media',
+        tooltip: 'Insert media',
+        onclick: function () {
+          fire('click.media');
+        }
+      });
+    }
+    function onCreated(editor) {
+      window.addEventListener('message', evt => {
+        if (evt.origin !== parentUri)
+          return
+
+        const data = JSON.parse(evt.data);
+        const type = data.type;
+
+        if (type === event('update')) {
+          const value = data.value;
+          tinymce.activeEditor.setContent(value);
+        }
+        else if (type === event('insert.image')) {
+          const src = data.src;
+          const alt = data.alt;
+          const title = data.title;
+          const picture = `<picture><img src="${src}" alt="${alt}" title="${title}"></picture>`;
+          tinymce.activeEditor.insertContent(picture);
+        }
+        else if (type === event('insert.media')) {
+          const src = data.src;
+          const video = `<video><source src="${src}"></video>`;
+          tinymce.activeEditor.insertContent(video);
+        }
+      });
+
+      editor.on('Blur', function (e) {
+        fire('change', { value: tinymce.activeEditor.getContent() })
+      });
+
+      fire('created');
+
+      let old = null;
+      const autoSave = () => {
+        const current = tinymce.activeEditor.getContent();
+        if (old != current) {
+          fire('change', { value: current });
+          old = current;
+        }
+      }
+      setInterval(autoSave, 3000);
+    }
+
+    window.addEventListener('message', evt => {
+      if (evt.origin !== parentUri)
+        return
+
+      const data = JSON.parse(evt.data);
+      const type = data.type;
+
+      if (type === event('init')) {
+        const opts = Object.assign({
+          selector: '#editor',
+          plugins: ['paste', 'table', 'lists', 'code', 'link', 'save', 'template', 'image', 'media', 'anchor'],
+          menubar: 'edit format insert',
+          toolbar: [
+            'undo redo | formatselect | removeformat bold italic underline | alignleft aligncenter alignright | outdent indent | bullist numlist | blockquote table fileimage filemedia insert | code',
+          ],
+          templates: [],
+          paste_as_text: true,
+          resize: false,
+          height: document.body.scrollHeight - 110,
+          save_onsavecallback: onSave,
+          setup: onSetup,
+          init_instance_callback: onCreated
+        }, data.opts)
+        tinymce.init(opts);
+      }
+    });
+
+    window.getContent = function () {
+      return tinymce.activeEditor.getContent();
+    }
+  </script>
+</body>
+
+</html>

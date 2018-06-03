@@ -1,0 +1,69 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-app">
+  <template>
+    <style>
+      :host {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      :host::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      bottom: -5px;
+      left: -5px;
+      right: -5px;
+      filter: brightness(var(--bg-image-brightness), 100%);      
+      background: var(--bg-image-secondary);
+      background-size: cover;  
+      z-index: -1;
+      }
+      section {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+      }
+      main {
+        flex:1;
+        display: flex;
+        flex-direction: row;
+      }
+      :host([layout="simple"]) section header,
+      :host([layout="simple"]) section nav {
+        display: none;
+      }
+      ::slotted(aiplugs-nav-items) {
+        height: 100%;
+      }
+      ::slotted([expanded]) {
+        flex: 1;
+      }
+    </style>
+    <header>
+        <slot name="header"></slot>
+    </header>
+    <section>
+        <nav>
+            <slot name="side"></slot>
+        </nav>
+        <main>
+            <slot></slot>
+        </main>
+    </section>
+  </template>
+
+  <script>
+    class AiplugsApp extends Polymer.Element {
+      static get is() { return 'aiplugs-app'; }
+      static get properties() {
+        return {};
+      }
+    }
+
+    window.customElements.define(AiplugsApp.is, AiplugsApp);
+  </script>
+</dom-module>

@@ -1,0 +1,265 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-input">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label,
+      input,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      input {
+        display: block;
+        padding: 12px;
+        background: var(--color-bg-secondary);
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: backgroud linear .25s;
+      }
+
+      :host(:hover) input {
+        background: #f0f0f0;
+      }
+
+      input:focus,
+      input:active {
+        background: var(--color-bg-secondary);
+      }
+
+      :host(:focus-within)>header>label {
+        color: var(--color-primary);
+      }
+
+      :host([invalid]) input {
+        background: bisque;
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+
+      input:read-only {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        cursor: not-allowed;
+      }
+      
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+      .fa-times-circle {
+        color: var(--color-error);
+      }
+      .fa-check-circle {
+        color: #2ecc71;
+      }
+      .unique-info {
+        display: inline-block;
+        position: absolute;
+        right: 0;
+        font-size: 16px;
+        padding: 12px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+    </style>
+
+    <header>
+      <label>[[label]]</label>
+      <template is="dom-if" if="{{description}}">
+        <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+        <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+      </template>
+    </header>
+    <div class="container">
+      <template is="dom-if" if="{{_needUniqueInfo(unique, value)}}">
+        <i class$="unique-info fa {{_toggle('fa-times-circle', 'fa-check-circle', _duplicated)}}"></i>
+      </template>
+      <input id="input" list="suggestion" name$="[[name]]" type$="[[type]]" value="{{value::input}}" placeholder$="[[placeholder]]" readonly$="[[readonly]]"
+        required$="[[required]]" pattern$="[[pattern]]" on-blur="_onBlur" on-keydown="_onKeydown">
+    </div>
+    <datalist id="suggestion">
+      <template is="dom-repeat" items="{{suggestion}}">
+        <option value="{{item.value}}" label="{{item.label}}"></option>
+      </template>
+    </datalist>
+    <template is="dom-if" if="{{errorMessage}}">
+      <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+    </template>
+    
+  </template>
+
+  <script>
+    class AiplugsInput extends Polymer.Element {
+      static get is() { return 'aiplugs-input'; }
+      static get properties() {
+        return {
+          type: {
+            type: String,
+            value: 'text'
+          },
+          name: String,
+          label: String,
+          value: {
+            type: String,
+            value: '',
+            notify: true
+          },
+          ajaxUri: {
+            type: String,
+            value: null
+          },
+          ajaxKey: {
+            type: String,
+            value: 'keyword'
+          },
+          ajaxLabel: {
+            type: String,
+            value: 'label'
+          },
+          ajaxValue: {
+            type: String,
+            value: 'value'
+          },
+          suggestion: {
+            type: Array,
+            value: []
+          },
+          unique: {
+            type: Boolean,
+            value: false
+          },
+          ignoreCase: {
+            type: Boolean,
+            value: false
+          },
+          placeholder: String,
+          pattern: String,
+          description: String,
+          errorMessage: String,
+          readonly: Boolean,
+          required: Boolean,
+          invalid: {
+            type: Boolean,
+            reflectToAttribute: true
+          },
+          _visibleDescription: Boolean,
+          _duplicated: {
+            type: Boolean,
+            value: false
+          }
+        };
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.input.focus();
+      }
+      _class(name, flag) {
+        return flag ? name : '';
+      }
+      _toggle(on, off, flag) {
+        return flag ? on : off;
+      }
+      _onBlur() {
+        this._validation();
+      }
+      _onKeydown() {
+        this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(500), () => {
+          this._validation();
+          this._loadSuggestion();
+        })
+      }
+      _validation() {
+        this.invalid = !this.$.input.validity.valid;
+        if (!this.unique && ((this.suggestion && this.suggestion.length > 0) || this.ajaxUri)) {
+          const value = this.$.input.value;
+          const option = this.$.suggestion.querySelector(`option[value="${value}"]`);
+          const label = option ? option.label : value;
+
+          if ( !option) {
+            this.invalid = true;
+          }
+        }
+      }
+      _loadSuggestion() {
+        const value = this.$.input.value;
+        const uri = this.ajaxUri || '';
+        const req = uri + (uri.indexOf('?') >= 0 ? '&' : '?') + this.ajaxKey + '=' + encodeURIComponent(value);
+        fetch(req).then(res => {
+          if (res.ok) {
+            const labelKey = this.ajaxLabel;
+            const valueKey = this.ajaxValue;
+            res.json().then(suggestion => {
+              if (this.unique) {
+                const isDuplicated = this.ignoreCase
+                      ? item => item[valueKey].toLowerCase() == value.toLowerCase()
+                      : item => item[valueKey] == value;
+                this._duplicated = suggestion.find(isDuplicated);
+                if (this._duplicated) {
+                  this.invalid = true;
+                }
+              }
+              else {
+                this.suggestion = suggestion.map(s => ({ 
+                  label: s[labelKey], 
+                  value: s[valueKey] 
+                }))
+              }
+            })
+          }
+        })
+      }
+      _needUniqueInfo(unique, value) {
+        return unique && value;
+      }
+    }
+
+    window.customElements.define(AiplugsInput.is, AiplugsInput);
+  </script>
+</dom-module>

@@ -1,0 +1,40 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-embed">
+  <template>
+    <style>
+      :host {
+        display: block;
+        height: 100%;
+        overflow-y: auto;
+      }
+    </style>
+    <article id="container">
+    </article>
+  </template>
+
+  <script>
+    class AiplugsEmbed extends Polymer.Element {
+      static get is() { return 'aiplugs-embed'; }
+      static get properties() {
+        return {
+          src: {
+            type: String,
+            observer: '_load'
+          }
+        };
+      }
+      _load(src) {
+          fetch(src)
+            .then(res => {
+                return res.text();
+            })
+            .then(html => {
+                this.$.container.innerHTML = html;
+            });
+      }
+    }
+
+    window.customElements.define(AiplugsEmbed.is, AiplugsEmbed);
+  </script>
+</dom-module>

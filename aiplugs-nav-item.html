@@ -1,0 +1,64 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-nav-item">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      .left {
+        width: 64px;
+        min-width: 64px;
+        font-size: 24px;
+        display: inline-block;
+        text-align: center;
+      }
+      a {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: background linear 0.25s;
+        text-overflow:clip;
+        white-space: nowrap;
+        text-decoration: none;
+        color: var(--color-text-inverted);
+      }
+      a:hover {
+        background: rgba(255,255,255,0.15);      
+      }
+      :host(.active) a, a:active {
+        transition: none;      
+        background: var(--color-accent);
+      }
+      .left, .right {
+        user-select: none;
+      }
+    </style>  
+    <a href$="[[href]]">
+      <span class="left">
+        <slot name="icon"></slot>
+      </span>
+      <span class="right">
+        <slot></slot>
+      </span>
+    </a>
+  </template>
+
+  <script>
+    class AiplugsNavItem extends Polymer.Element {
+      static get is() { return 'aiplugs-nav-item'; }
+      static get properties() {
+        return {
+          href : {
+            type: String,
+            value: null
+          }
+        };
+      }
+    }
+
+    window.customElements.define(AiplugsNavItem.is, AiplugsNavItem);
+  </script>
+</dom-module>

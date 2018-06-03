@@ -1,0 +1,438 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="aiplugs-tag">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label,
+      input,
+      p,
+      span {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      :host(:focus-within) > header > label {
+        color: var(--color-primary);
+      }
+
+      header.readonly > label {
+        color: var(--color-text-secondary);
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      #input,
+      #values {
+        background: var(--color-bg-secondary);
+      }
+
+      :host(:hover) #input,
+      :host(:hover) #values {
+        background: #f0f0f0;
+      }
+
+      :host(:focus-within) #values,
+      :host(:focus-within) #input {
+        background: var(--color-bg-secondary);
+      }
+
+      #input:read-only,
+      #values.readonly {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+      }
+
+      #values {
+        border-radius: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 56px;
+        padding-bottom: 8px;
+        padding-right: 8px;
+      }
+
+      #input {
+        flex: 1;
+        display: inline-block;
+        border: none;
+        outline: none;
+        transition: backgroud linear .25s;
+        margin: 12px;
+        margin-bottom: 4px;
+        min-width: 120px;
+        font-size: 16px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 0 8px 0 12px;
+        border-radius: 8px;
+        margin: 12px 0 0 12px;
+        height: 40px;
+        line-height: 40px;
+        font-size: 16px;
+        border: 1px solid var(--color-primary);
+        color: var(--color-text-inverted);
+        background: var(--color-primary);
+        min-width: fit-content;
+        box-sizing: border-box;
+      }
+
+      .tag input {
+        display: none;
+      }
+
+      .tag .close {
+        outline: none;
+        border: none;
+        background: transparent;
+        font-size: 16px;
+        color: var(--color-text-inverted);
+      }
+
+      .tag .close:hover {
+        cursor: pointer;
+      }
+
+      .tag .close:disabled {
+        font-size: 0;
+      }
+
+      .focus-last .tag:nth-last-of-type(1) {
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      .focus-last .tag:nth-last-of-type(1) .close {
+        color: var(--color-primary);
+      }
+
+      #values.readonly .tag {
+        background: transparent;
+        border-color: transparent;
+        color: var(--color-text-secondary);
+        padding: 0;
+        margin-left: 0;
+      }
+
+      #values.readonly .tag:nth-of-type(1) {
+        margin-left: 12px;
+      }
+
+      #values.readonly .tag span::after {
+        content: ' ,';
+      }
+
+      #values.readonly .tag:nth-last-of-type(1) span::after {
+        content: '';
+      }
+
+      #values.readonly #input {
+        display: none;
+      }
+
+      :host([invalid]) #input,
+      :host([invalid]) #values {
+        background: bisque;
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+    </style>
+
+    <header class$="{{_class('focus', _focus)}} {{_class('readonly', readonly)}}">
+      <label>[[label]]</label>
+      <template is="dom-if" if="{{description}}">
+        <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+        <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+      </template>
+    </header>
+
+    <div id="values" class$="{{_class('focus', _focus)}} {{_class('focus-last', _focusLast)}} {{_class('readonly', readonly)}}"
+      on-click="_focusInput">
+      <template is="dom-repeat" id="tags" items="{{value}}">
+        <span class="tag">
+          <span>{{_getTagLabel(item)}}</span>
+          <button class="close" on-click="_remove" disabled$="{{readonly}}">&times;</button>
+          <input name$="[[name]][]" value$="[[_getTagValue(item)]]" disabled$="{{readonly}}">
+        </span>
+      </template>
+      <input id="input" list="suggestion" type="text" on-keydown="_onKeydown" placeholder$="[[placeholder]]" pattern$="[[pattern]]"
+        on-focus="_onFocus" on-blur="_onBlur">
+      <template is="dom-if" if="{{_hasSuggestion(suggestion)}}">
+        <datalist id="suggestion">
+          <template is="dom-repeat" items="{{suggestion}}">
+            <option value="{{item.value}}" label="{{item.label}}"></option>
+          </template>
+        </datalist>
+      </template>
+    </div>
+
+    <template is="dom-if" if="{{errorMessage}}">
+      <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+    </template>
+
+  </template>
+
+  <script>
+    class AiplugsTag extends Polymer.Element {
+      static get is() { return 'aiplugs-tag'; }
+      static get properties() {
+        return {
+          label: {
+            type: String,
+            value: null
+          },
+          name: {
+            type: String,
+            value: null
+          },
+          value: {
+            type: Array,
+            value: []
+          },
+          ajaxUri: {
+            type: String,
+            value: null
+          },
+          ajaxKey: {
+            type: String,
+            value: 'keyword'
+          },
+          ajaxLabel: {
+            type: String,
+            value: 'label'
+          },
+          ajaxValue: {
+            type: String,
+            value: 'value'
+          },
+          suggestion: {
+            type: Array,
+            value: []
+          },
+          placeholder: {
+            type: String,
+            value: null
+          },
+          pattern: {
+            type: String,
+            value: null
+          },
+          description: {
+            type: String,
+            value: null
+          },
+          errorMessage: {
+            type: String,
+            value: null
+          },
+          readonly: {
+            type: Boolean,
+            value: false
+          },
+          required: {
+            type: Boolean,
+            value: false
+          },
+          ignoreCase: {
+            type: Boolean,
+            value: false
+          },
+          invalid: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          },
+          min: {
+            type: Number,
+            value: 0
+          },
+          max: {
+            type: Number,
+            value: null
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+          _focus: {
+            type: Boolean,
+            value: false
+          },
+          _focusLast: {
+            type: Boolean,
+            value: false
+          }
+        };
+      }
+      _add() {
+        if (this._invalidPattern || this.$.input.value.length === 0)
+          return;
+
+        const value = this.$.input.value;
+        const option = this.$.values.querySelector(`datalist option[value="${value}"]`);
+        const label = option ? option.label : value;
+
+        if (this.ajaxUri && !option)
+          return;
+
+        const exists = this.ignoreCase
+          ? item => this.value.find(o => o.value.toString().toLowerCase() == item.toLowerCase())
+          : item => this.value.find(o => o.value == item);
+
+        if (!exists(value)) {
+          this.push('value', { label, value });
+          this.$.input.value = '';
+        }
+      }
+      _remove(e) {
+        const index = this.$.tags.indexForElement(e.target);
+        if (index >= 0) {
+          this.value = this.value.filter((_, i) => i != index);
+          this._validation();
+        }
+      }
+      _tryRemoveLast() {
+        if (this.$.input.value.length === 0 && this.value.length > 0) {
+          if (this._focusLast) {
+            this.pop('value');
+            this._focusLast = false;
+          }
+          else {
+            this._focusLast = true;
+          }
+        }
+      }
+      _tryCancelRemoveLast() {
+        if (this._focusLast) {
+          this._focusLast = false;
+        }
+      }
+      _focusInput() {
+        this.$.input.focus();
+      }
+      _onFocus() {
+        this._focus = true;
+        this._focusLast = false;
+      }
+      _onBlur() {
+        this._focus = false;
+        this._focusLast = false;
+      }
+      _class(className, flag) {
+        return flag ? className : '';
+      }
+      _getTagValue(item) {
+        if (typeof item === 'object') {
+          return item.value;
+        }
+
+        return item || '';
+      }
+      _getTagLabel(item) {
+        if (typeof item === 'object') {
+          return item.label;
+        }
+
+        return item || '';
+      }
+      _onKeydown(e) {
+        this._validation();
+        this._loadSuggestion();
+        if (e.keyCode === 13) {
+          e.preventDefault();
+          this._add();
+        }
+        else if (e.keyCode === 8) {
+          this._tryRemoveLast();
+        }
+        else if (e.keyCode === 39) {
+          this._tryCancelRemoveLast();
+        }
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.input.focus();
+      }
+      _validation() {
+        this._vDebouncer = Polymer.Debouncer.debounce(this._vDebouncer, Polymer.Async.timeOut.after(500), () => {
+          const pattern = !this.$.input.validity.valid;
+          const required = this.required && this.value.length === 0;
+          const count = this.min > this.value.length || this.value.length > (this.max || Number.MAX_VALUE);
+          this.invalid = pattern || required || count;
+          this._invalidPattern = pattern;
+          this._invalidRequired = required;
+          this._invalidCount = count;
+        })
+      }
+      _loadSuggestion() {
+        this._sDebouncer = Polymer.Debouncer.debounce(this._sDebouncer, Polymer.Async.timeOut.after(250), () => {
+          const value = this.$.input.value;
+          const uri = this.ajaxUri || '';
+          const req = uri + (uri.indexOf('?') >= 0 ? '&' : '?') + this.ajaxKey + '=' + encodeURIComponent(value);
+          fetch(req).then(res => {
+            if (res.ok) {
+              const labelKey = this.ajaxLabel;
+              const valueKey = this.ajaxValue;
+              res.json().then(suggestion => {
+                this.suggestion = suggestion.map(s => ({ 
+                  label: s[labelKey], 
+                  value: s[valueKey] 
+                }))
+              })
+            }
+          })
+        })
+      }
+      _hasSuggestion() {
+        return this.suggestion.length > 0;
+      }
+    }
+
+    window.customElements.define(AiplugsTag.is, AiplugsTag);
+  </script>
+</dom-module>

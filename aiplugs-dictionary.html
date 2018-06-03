@@ -1,0 +1,344 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-dictionary">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: block;
+      }
+
+      label,
+      input,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      input {
+        display: block;
+        padding: 12px;
+        background: var(--color-bg-secondary);
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: backgroud linear .25s;
+      }
+
+      :host(:hover) input {
+        background: #f0f0f0;
+      }
+
+      input:focus,
+      input:active {
+        background: var(--color-bg-secondary);
+      }
+      :host(:focus-within) > header > label,
+      :host(:focus-within) > header > i {
+        color: var(--color-primary);
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+
+      input:read-only {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        cursor: not-allowed;
+      }
+
+      button {
+        border: none;
+        outline: none;
+        font-size: 16px;
+        padding: 12px;
+        background: var(--color-base, white);
+        color: var(--color-text-secondary);
+        opacity: 0.5;
+        transition: all linear .15s;
+      }
+      button:focus, button:hover,
+      button:focus i, button:hover i {
+        color: var(--color-primary);
+        opacity: 1;
+      }
+      button:disabled, button:disabled i {
+        display: none;
+      }
+      .close:focus, .close:hover {
+        text-shadow:0 0 16px var(--color-primary);
+      }
+      .line {
+        display: flex;
+        margin-bottom: 8px;
+      }
+      .line:nth-last-of-type(1) {
+        margin-bottom: 0;
+      }
+      .line input {
+        display: inline-block;
+      }
+      .line input[invalid] {
+        background: bisque;
+      }
+      .line input:nth-of-type(1) {
+        margin-right: 8px;
+      }
+      .line input:nth-last-of-type(1){
+        flex: 1;
+      }
+      .add {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+      }
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+    </style>
+
+    <header>
+      <label>[[label]]</label>
+      <template is="dom-if" if="{{description}}">
+        <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+        <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+      </template>
+    </header>
+    <div id="container">
+      <template id="values" is="dom-repeat" items="{{_values}}">
+        <div class="line">
+          <input value="{{item.key::input}}" on-blur="_onBlurKey" on-input="_validation" readonly$="[[readonly]]" pattern$="[[patternKey]]" placeholder$="[[placeholderKey]]">
+          <input value="{{item.value::input}}" on-blur="_onBlurValue" on-input="_validation" readonly$="[[readonly]]" pattern$="[[patternValue]]" placeholder$="[[placeholderValue]]">
+          <button class="close" on-click="_remove" disabled$="{{_one}}">&times;</button>
+        </div>        
+      </template>
+    </div>
+    <template is="dom-if" if="{{errorMessage}}">
+      <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+    </template>
+    <button class="add" disabled$="{{_hasEmpty}}" on-click="_add"><i class="fa fa-plus"></i></button>
+    
+  </template>
+
+  <script>
+    class AiplugsDictionary extends Polymer.Element {
+      static get is() { return 'aiplugs-dictionary'; }
+      static get properties() {
+        return {
+          type: {
+            type: String,
+            value: 'text'
+          },
+          value: {
+            type: Object,
+            value: function() { return {}; },
+            notify: true,
+            observer: '__valueChanges'
+          },
+          name: {
+            type: String,
+            value: ''
+          },
+          label: {
+            type: String,
+            value: ''
+          },
+          placeholderKey: {
+            type: String,
+            value: ''
+          },
+          placeholderValue: {
+            type: String,
+            value: ''
+          },
+          patternKey: {
+            type: String,
+            value: ''
+          },
+          patternValue: {
+            type: String,
+            value: ''
+          },
+          description: {
+            type: String,
+            value: ''
+          },
+          errorMessage: {
+            type: String,
+            value: ''
+          },
+          readonly: {
+            type: Boolean,
+            value: false
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+          _focus: {
+            type: Boolean,
+            value: false
+          },
+          _values: {
+            type: Array,
+            value: function() { return []; }
+          },
+          _invalidPattern: {
+            type: Boolean,
+            value: false
+          },
+          _invalidKey: {
+            type: Boolean,
+            value: false            
+          },
+          _one: {
+            type: Boolean,
+            computed: '_computeOne(_values, _values.*)'
+          },
+          _hasEmpty: {
+            type: Boolean,
+            computed: '_computeHasEmpty(_values, _values.*)'
+          },
+          invalid: {
+            type: Boolean,
+            reflectToAttribute: true,
+            computed: '_computeInvalid(_invalidKey, _invalidPattern)'
+          }
+        };
+      }
+      __valueChanges() {
+        this._values = Object.keys(this.value||{}).map(key => ({key, value: this.value[key]}));
+        if (this._values.length === 0) {
+          this._add(false);
+        }
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.container.querySelector(`.line:nth-last-of-type(1) input:nth-of-type(1)`).focus();
+      }
+      _class(name, flag) {
+        return flag ? name : '';
+      }
+      _validation(e) {
+        this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(500), () => {
+          let invalid = false;
+          if (!e.target.validity.valid) {
+            input.setAttribute('invalid', 'invalid');
+            invalid = true;
+          }
+          else {
+            input.removeAttribute('invalid');
+          }
+          this._invalidPattern = invalid;
+        })
+      }
+      _validationKey() {
+        const count = this._values.reduce((a,b) => { a[b.key] = 0; return a; }, {});
+        for (let value of this._values) {
+          count[ value.key]++;
+        }
+        
+        const keys = Object.keys(count).filter(key => count[key] > 1);        
+        const inputs = this.$.container.querySelectorAll(`.line input:nth-of-type(1)`);
+        for (let input of inputs) {
+          if (keys.indexOf(input.value) >= 0) {
+            input.setAttribute('invalid', 'invalid');           
+          }
+          else {
+            input.removeAttribute('invalid');
+          }
+        }
+        this._invalidKey = keys.length > 0;
+      }
+      _add(e) {
+        this.push('_values', { key: '', value: '' })
+        if (e) {
+          Polymer.RenderStatus.beforeNextRender(this, () => {
+            this.$.container.querySelector(`.line:nth-last-of-type(1) input:nth-of-type(1)`).focus();
+          }); 
+        }
+      }
+      _remove(e) {
+        const index = this.$.values.indexForElement(e.target);
+        if (index >= 0) {
+          this.splice('_values', index, 1);
+          this._validationKey();        
+        }
+      }
+      _onBlur() {
+        const count = {};
+        for (let v of this._values) {
+          if (count[v.key] === undefined) {
+            count[v.key] = 0;
+          }
+          count[v.key]++;
+        }
+        if (Object.keys(count).map(key => count[key]).filter(c => c > 1).length === 0) {
+          this.value = this._values.filter(v => v.key !== '').reduce((a, b) => { a[b.key] = b.value; return a; }, {})
+        }
+      }
+      _onBlurKey(e) {
+        this._onBlur();
+        const index = this.$.values.indexForElement(e.target);
+        if (index >= 0) {
+          this.set(`_values.${index}.key`, e.target.value);
+        }
+        this._validationKey();
+      }
+      _onBlurValue(e) {
+        this._onBlur();        
+        const index = this.$.values.indexForElement(e.target);
+        if (index >= 0) {
+          this.set(`_values.${index}.value`, e.target.value);
+        }
+      }
+      _computeHasEmpty(values, _) {
+        return !!values.find(v => v.key.length === 0)
+      }
+      _computeOne(values, _) {
+        return values.length <= 1;
+      }
+      _computeInvalid(invalidKey, invalidPattern) {
+        return invalidKey || invalidPattern;
+      }
+    }
+
+    window.customElements.define(AiplugsDictionary.is, AiplugsDictionary);
+  </script>
+</dom-module>

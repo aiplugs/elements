@@ -1,0 +1,362 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="aiplugs-select">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />    
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label,
+      input,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+      
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      :host(:hover)>header>label {
+        color: var(--color-primary);
+      }
+
+      select {
+        display: block;
+        padding: 12px;
+        background: var(--color-bg-secondary);
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: backgroud linear .25s;
+      }
+
+      :host(:hover) input {
+        background: #f0f0f0;
+      }
+
+      select:focus,
+      select:active {
+        background: var(--color-bg-secondary);
+      }
+
+      :host(:focus-within)>header>label {
+        color: var(--color-primary);
+      }
+
+      :host([invalid]) select {
+        background: bisque;
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+      
+      :host([readonly]) select {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        cursor: not-allowed;
+      }
+
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+      
+      :host([type="checkbox"]) .choice,
+      :host([type="radio"]) .choice  {
+        margin-top: 8px;
+      }
+
+      :host([type="checkbox"]) .choice:nth-of-type(1),
+      :host([type="radio"]) .choice:nth-of-type(1) {
+        margin-top: 0;
+      }
+
+      :host([type="checkbox"]) .choice input,
+      :host([type="radio"]) .choice input {
+        display: none;
+      }
+
+      :host([type="checkbox"]) .choice label,
+      :host([type="radio"]) .choice label {
+        user-select: none;
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        padding-left: 32px;
+        height: 24px;
+        line-height: 24px;
+      } 
+
+      :host([type="checkbox"]) .choice label::before {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 24px;
+        box-sizing: border-box;
+        border-radius: 5px;
+        border: 3px solid var(--color-bg-secondary);
+        background: var(--color-bg-secondary);
+        transition: border-color linear .15s;
+      }
+
+      :host([type="checkbox"]) .choice label:hover::before {
+        border-color: var(--color-primary);      
+      }
+
+      :host([type="checkbox"]) .choice input:checked ~ label::before {
+        display: none;
+      }
+
+      :host([type="checkbox"]) .choice input:active ~ label::after {
+        border: 3px solid var(--color-bg-secondary) !important;
+      }
+
+      :host([type="checkbox"]) .choice input:checked ~ label::after {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: -2px;
+        left: 8px;
+        width: 12px;
+        height: 20px;
+        box-sizing: border-box;
+        border-bottom: 3px solid var(--color-primary);
+        border-right: 3px solid var(--color-primary);
+        animation-name: rotate;
+        animation-duration: .15s;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+      }
+
+      @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(45deg); }
+      }
+
+      :host([type="radio"]) .choice label::before {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 24px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 3px solid var(--color-bg-secondary);
+        background: var(--color-bg-secondary);
+        transition: border-color linear .15s;
+      }
+
+      :host([type="radio"]) .choice label:hover::before,
+      :host([type="radio"]) .choice input:checked ~ label::before {
+        border-color: var(--color-primary);      
+      }
+
+      :host([type="radio"]) .choice input:active ~ label::after {
+        border: 3px solid var(--color-bg-secondary) !important;
+      }
+
+      :host([type="radio"]) .choice input:checked ~ label::after {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 12px;
+        height: 12px;
+        box-sizing: border-box;
+        background: var(--color-primary);
+        border-radius: 50%;
+        animation-name: scall;
+        animation-duration: .15s;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+      }
+
+      @keyframes scall {
+        0% { transform: scale(0, 0); }
+        100% { transform: scale(1, 1); }
+      }
+
+    </style>
+    <header>
+      <label>[[label]]</label>
+      <template is="dom-if" if="{{description}}">
+        <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+        <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+      </template>
+    </header>
+    <template is="dom-if" if="{{_eq('select', type)}}">
+      <select id="input" name$="[[_name]]" disabled$="[[readonly]]" required$="[[required]]" multiple$="[[multiple]]" on-change="_validation" on-blur="_validation">
+        <option>[[placeholder]]</option>
+        <template is="dom-repeat" items="{{options}}">
+          <option value="[[item.value]]">[[item.label]]</option>
+        </template>
+      </select>
+    </template>
+    <template is="dom-if" if="{{_eq('checkbox', type)}}">
+      <template is="dom-repeat" items="{{options}}">
+        <div class="choice">
+          <input type="checkbox" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]">
+          <label for$="[[name]][[index]]">[[item.label]]</label>
+        </div>
+      </template>
+    </template>
+    <template is="dom-if" if="{{_eq('radio', type)}}">
+      <template is="dom-repeat" items="{{options}}">
+        <div class="choice">
+          <input type="radio" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]" required$="[[required]]">
+          <label for$="[[name]][[index]]">[[item.label]]</label>
+        </div>
+      </template>
+    </template>
+    <template is="dom-if" if="{{errorMessage}}">
+      <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+    </template>
+    
+  </template>
+  <script>
+    class AiplugsSelect extends Polymer.Element {
+      static get is() { return 'aiplugs-select'; }
+      static get properties() {
+        return {
+          type: {
+            type: String,
+            value: 'select'
+          },
+          label: {
+            type: String,
+            value: null
+          },
+          name: {
+            type: String,
+            value: null
+          },
+          multiple: {
+            type: Boolean,
+            value: false
+          },
+          options: {
+            type: Array,
+            value: []
+          },
+          placeholder: {
+            type: String,
+            value: ""
+          },
+          description: {
+            type: String,
+            value: null
+          },
+          errorMessage: {
+            type: String,
+            value: null
+          },
+          readonly: {
+            type: Boolean,
+            value: false
+          },
+          required: {
+            type: Boolean,
+            value: false
+          },
+          invalid: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          },
+          min: {
+            type: Number,
+            value: 0
+          },
+          max: {
+            type: Number,
+            value: null
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+          _name: {
+            type: String,
+            computed: '_computeName(type, multiple, name)'
+          }
+        };
+      }
+      _computeName(type, multiple, name) {
+        if (type === 'select') {
+          return multiple ? name + '[]' : name;
+        }
+        else if (type === 'checkbox') {
+          return name + '[]';
+        }
+        else if (type === 'radio') {
+          return name;
+        }
+      }
+      _eq(expected, actual) {
+        return expected === actual;
+      }
+      _class(className, flag) {
+        return flag ? className : '';
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+      }
+      _validation() {
+        if (this.type === 'select') {
+          const select = this.shadowRoot.querySelector('#input');
+          const length = select.querySelectorAll('option[selected]').length;
+          this.invalid = !select.validity.valid || length < this.min  && length > this.max;        
+        }
+        else if (this.type === 'checkbox') {
+        }
+        else if (this.type === 'radio') {
+
+        }
+        
+      }
+    }
+
+    window.customElements.define(AiplugsSelect.is, AiplugsSelect);
+  </script>
+</dom-module>

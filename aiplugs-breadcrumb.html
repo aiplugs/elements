@@ -1,0 +1,74 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="aiplugs-breadcrumb">
+  <template>
+    <style>
+      ul {
+        display: flex;
+        flex-direction: row;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        line-height: 24px;
+        padding: 12px 24px;
+        background: var(--color-mono-light);
+      }
+
+      li {
+        display: inline-block;
+        cursor: pointer;
+        color: var(--color-secondary-text);
+      }
+
+      li:hover {
+        color: var(--color-primary);
+      }
+
+      li::after {
+        content: '/';
+        padding: 0 8px;
+        color: var(--color-secondary-text);
+      }
+
+      li:last-child::after {
+        content: '';
+      }
+
+      li:first-child::after {
+        content: '/';
+      }
+
+      li:first-child::before {
+        font-family: var(--icon-font-family);
+        content: var(--icon-home, 'HOME');
+      }
+    </style>
+    <ul>
+      <li data-index="-1" on-click="select"></li>
+      <template is="dom-repeat" items="{{path}}">
+        <li data-index$="[[index]]" on-click="select">[[item]]</li>
+      </template>
+    </ul>
+  </template>
+
+  <script>
+    class AiplugsBreadcrumb extends Polymer.Element {
+      static get is() { return 'aiplugs-breadcrumb'; }
+      static get properties() {
+        return {
+          path: {
+            type: Array,
+            value: []
+          }
+        };
+      }
+      select(e) {
+        const path = this.path.slice(0, +(e.path[0].dataset.index) + 1)
+        this.dispatchEvent(new CustomEvent('change', { detail: { path } }));
+      }
+    }
+
+    window.customElements.define(AiplugsBreadcrumb.is, AiplugsBreadcrumb);
+  </script>
+</dom-module>

@@ -1,0 +1,98 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-monaco">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #container {
+        flex: 1;
+      }
+
+      #editor {
+        width: 100%;
+        height: 100%;;
+      }
+
+      textarea {
+        display: none;
+      }
+    </style>
+    <div id="container">
+      <iframe id="editor" scrolling="no" frameborder="0"></iframe>
+      <textarea name="[[name]]" value="{{value::input}}"></textarea>
+    </div>
+
+  </template>
+
+  <script>
+    class AiplugsMonaco extends Polymer.Element {
+      static get is() { return 'aiplugs-monaco'; }
+      static get properties() {
+        return {
+          name: String,
+          value: String,
+          opts: {
+            type: Object,
+            value: {}
+          },
+          jsonschema: {
+            type: String,
+            observer: '_setJsonSchema'
+          }
+        };
+      }
+      ready() {
+        super.ready();
+
+        const id = this.name;
+        const src = `${location}/../../docs/monaco-iframe.html?parent=${location.origin}&id=${id}`;
+        const origin = new URL(src).origin;
+        const event = type => `monaco#${id}.${type}`;
+        const fire = (type, payload = {}) => {
+          if (this.$.editor.contentWindow) {
+            payload.type = event(type);
+            this.$.editor.contentWindow.postMessage(JSON.stringify(payload), origin);
+          }
+        }
+
+        this._fire = fire;        
+        this.$.editor.src = src;
+
+        window.addEventListener('message', evt => {
+          if (evt.origin !== origin)
+            return
+
+          if (!evt.data)
+            return
+
+          const data = JSON.parse(evt.data)
+          const type = data.type
+
+          if (type === event('change')) {
+            this.value = data.value;
+          }
+          else if (type === event('created')) {
+            fire('setup', { opts: this.opts });
+            fire('update', { value: this.value });
+            this._setJsonSchema(this.jsonschema);
+          }
+        })
+      }
+      _setJsonSchema(uri) {
+        fetch(uri, {mode: 'cors'}).then(res => {
+          if (res.ok) {
+            res.json().then(schema => {
+              this._fire('append.jsonschema', { uri, schema });
+            })
+          }
+        })
+      }
+    }
+
+    window.customElements.define(AiplugsMonaco.is, AiplugsMonaco);
+  </script>
+</dom-module>

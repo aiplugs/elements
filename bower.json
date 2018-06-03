@@ -1,0 +1,24 @@
+{
+  "name": "aiplugs-elements",
+  "description": "aiplugs custom elements",
+  "main": "aiplugs-elements.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^2.0.0"
+  },
+  "devDependencies": {
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",
+    "web-component-tester": "Polymer/web-component-tester#^6.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0",
+    "paper-button": "^2.1.1",
+    "paper-styles": "^2.1.0",
+    "vaadin-button": "vaadin/vaadin-button#^2.0.0",
+    "vaadin-grid": "vaadin/vaadin-grid#^5.0.2",
+    "vaadin-dialog": "^2.0.0",
+    "paper-tooltip": "^2.1.1",
+    "tinymce": "^4.7.12",
+    "iron-form": "^2.3.0"
+  },
+  "resolutions": {
+    "polymer": "^2.0.0"
+  }
+}

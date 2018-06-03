@@ -1,0 +1,106 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../vaadin-dialog/vaadin-dialog.html">
+
+<dom-module id="aiplugs-tinymce">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #container {
+        flex: 1;
+      }
+
+      #editor {
+        width: 100%;
+        height: 100%;;
+      }
+
+      textarea {
+        display: none;
+      }
+    </style>
+    <aiplugs-file-dialog id="fileDialog"></aiplugs-file-dialog>
+    <div id="container">
+      <iframe id="editor" scrolling="no" frameborder="0"></iframe>
+      <textarea name="[[name]]" value="{{value::input}}"></textarea>
+    </div>
+
+  </template>
+
+  <script>
+    class AiplugsTinyMCE extends Polymer.Element {
+      static get is() { return 'aiplugs-tinymce'; }
+      static get properties() {
+        return {
+          name: String,
+          value: String,
+          opts: {
+            type: Object,
+            value: {}
+          }
+        };
+      }
+      ready() {
+        super.ready();
+
+        const id = this.name;
+        const src = `${location}/../../docs/tinymce-iframe.html?parent=${location.origin}&id=${id}`;
+        const origin = new URL(src).origin;
+        const event = type => `tinymce#${id}.${type}`;
+        const fire = (type, payload = {}) => {
+          if (this.$.editor.contentWindow) {
+            payload.type = event(type);
+            this.$.editor.contentWindow.postMessage(JSON.stringify(payload), origin);
+          }
+        }
+
+        this._fire = fire;        
+        this.$.editor.src = src;
+        this.$.editor.addEventListener('load', () => {
+          fire('init', { opts: this.opts });
+        })
+
+        window.addEventListener('message', evt => {
+          if (evt.origin !== origin)
+            return
+
+          if (!evt.data)
+            return
+
+          const data = JSON.parse(evt.data)
+          const type = data.type
+
+          if (type === event('change')) {
+            this.value = data.value;
+          }
+          else if (type === event('click.image')) {
+            this._openDialog(['image']);
+          }
+          else if (type === event('click.media')) {
+            this._openDialog(['video']);
+          }
+          else if (type === event('created')) {
+            fire('update', { value: this.value });
+          }
+        })
+      }
+      _openDialog(accepts) {
+        this.$.fileDialog.open(accepts);
+      }
+      _closeDialog() {
+        this.$.fileDialog.close();
+      }
+      insertImage(src, alt, title) {
+        this._fire('insert.image', { src, alt, title })
+      }
+      insertMedia(src) {
+        this._fire('insert.media', { src })
+      }
+    }
+
+    window.customElements.define(AiplugsTinyMCE.is, AiplugsTinyMCE);
+  </script>
+</dom-module>

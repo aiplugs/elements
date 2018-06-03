@@ -1,0 +1,91 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-grid-column">
+  <script>
+    class AiplugsGridColumn extends Polymer.Element {
+      static get is() { return 'aiplugs-grid-column'; }
+      static get properties() {
+        return {
+          item: Object,
+          index: Number,
+          flex: Boolean,
+          small: Boolean,
+          _headerTemplate: Object,
+          _bodyTemplate: Object,
+          _headerCell: Object,
+          _cells: {
+            type: Array,
+            value: []
+          }
+        };
+      }
+      static get observers() {
+        return [
+          '_updateBody(_bodyTemplate, _cells, _cells.splices)',
+          '_updateHeader(_headerTemplate, _headerCell)'
+        ];
+      }
+      constructor() {
+        super();
+        this._templateObserver = new Polymer.FlattenedNodesObserver(this, info => {
+          this._headerTemplate = this._prepareHeaderTemplate();
+          this._bodyTemplate = this._prepareBodyTemplate();
+        });
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        this._templateObserver.flush();
+        if (!this._bodyTemplate) {
+          this._templateObserver.callback();
+        }
+      }
+      _updateBody(_bodyTemplate, _cells, splices) {
+        if (_bodyTemplate && _cells) {
+          if (splices) {
+            for(let s of splices.indexSplices) {
+              for(let i = 0; i < s.addedCount; i++) {
+                let cell = _cells[s.index + i];
+                this._update(_bodyTemplate, cell)
+              }
+            }
+          }
+          else {
+            _cells.forEach(cell => {
+              this._flush(cell);
+              this._update(_bodyTemplate, cell);
+            })
+          }
+        }
+      }
+      _updateHeader(_headerTemplate, _headerCell) {
+        if (_headerTemplate && _headerCell) {
+          this._update(_headerTemplate, _headerCell)
+        }
+      }
+      _update(template, cell) {
+        const instance = new template(cell.props || {});
+        cell.elem.appendChild(instance.root);
+      }
+      _flush(cell) {
+        cell.elem.innerHTML = '';
+      }
+      _prepareHeaderTemplate() {
+        const template = this._findTemplate(true);
+        return Polymer.Templatize.templatize(template);
+      }
+      _prepareBodyTemplate() {
+        const template = this._findTemplate();
+        return Polymer.Templatize.templatize(template);
+      }
+      _findTemplate(header = false) {
+        return Polymer.FlattenedNodesObserver.getFlattenedNodes(this)
+          .filter(node =>
+            node.localName === 'template'
+            && node.classList.contains('header') === header
+          )[0];
+      }
+    }
+
+    window.customElements.define(AiplugsGridColumn.is, AiplugsGridColumn);
+  </script>
+</dom-module>

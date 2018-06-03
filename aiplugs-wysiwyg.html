@@ -1,0 +1,292 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../vaadin-dialog/vaadin-dialog.html">
+<dom-module id="aiplugs-wysiwyg">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host>div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label,
+      textarea,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+      .cover {
+        display: flex;
+        position: relative;
+      }
+      textarea {
+        display: block;
+        padding: 12px;
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: backgroud linear .25s;
+        overflow: hidden;
+        resize: none;
+        max-height: 80px;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        width: 100%;
+      }
+      .screen {
+        display: none;
+      }
+      .screen p {
+        width: 100%;
+        font-size: 24px;
+        text-align: center;
+      }
+      .screen p i {
+        color: var(--color-primary);        
+      }
+      .cover:hover .screen {
+        display: flex;
+        align-items: center;
+        justify-items: center;
+        position: absolute;
+        top:0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        cursor: pointer;        
+        background: rgba(255,255,255,0.5);
+      }
+
+      :host(:hover) textarea {
+        background: #f0f0f0;
+      }
+
+      :host([invalid]) textarea {
+        background: bisque;
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+
+      .open textarea {
+        max-height: unset;
+      }
+
+      button {
+        border: none;
+        outline: none;
+        background: var(--color-base, white);
+        opacity: 0.5;
+        height: 24px;
+        font-size: 24px;
+        line-height: 24px;
+        margin-top: -24px;
+        z-index: 1;
+        transition: opacity linear .15s;
+      }
+
+      button:hover {
+        opacity: 0.9;
+        color: var(--color-primary);
+      }
+
+      button:hover i {
+        color: var(--color-primary);
+      }
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+    </style>
+
+    <div id="container" class$="[[_class('open', _visibleView)]]">
+      <header>
+        <label>[[label]]</label>
+        <template is="dom-if" if="{{description}}">
+          <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+          <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+        </template>
+      </header>
+      <div class="cover">
+        <textarea id="input" name$="[[name]]" type$="[[type]]" value="{{value::input}}" readonly requried$="[[requred]]" pattern$="[[pattern]]"
+        on-blur="_validation" on-input="_validation"></textarea>
+        <div class="screen" on-click="_edit">
+          <p><i class="fa fa-pencil-square-o"></i></p>
+        </div>
+      </div>
+      <button on-click="_toggleView">
+        <i class$="fa [[_toggleClass('fa-angle-double-up', 'fa-angle-double-down', _visibleView)]]"></i>
+      </button>
+      <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+    </div>
+  </template>
+
+  <script>
+    class AiplugsWysiwyg extends Polymer.Element {
+      static get is() { return 'aiplugs-wysiwyg'; }
+      static get properties() {
+        return {
+          type: {
+            type: String,
+            value: 'text'
+          },
+          name: String,
+          label: String,
+          value: {
+            type: String,
+            value: '',
+            notify: true,
+            observer: '_updateHeight'
+          },
+          pattern: String,
+          description: String,
+          errorMessage: String,
+          requred: Boolean,
+          invalid: {
+            type: Boolean,
+            reflectToAttribute: true
+          },
+          bladeContainer: {
+            type: String,
+            value: 'aiplugs-app'
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+          _visibleView: {
+            type: Boolean,
+            value: false
+          }
+        };
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        const input = this.$.input;
+        const style = getComputedStyle(input);
+        this._diffWidth = parseInt(style.paddingLeft) + parseInt(style.paddingRight);
+        this._diffHeight = -(parseInt(style.paddingBottom) + parseInt(style.paddingTop));
+
+        const next = window.requestIdleCallback || (callback => { setTimeout(callback, 100); });
+        next(() => {
+          this._updateHeight();
+        })
+        this._id = 'wysiwyg' + (~~(Math.random() * Math.pow(2, 16))).toString(16);
+      }
+      _toggleView() {
+        this._visibleView = !this._visibleView;
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.input.focus();
+      }
+      _class(name, flag) {
+        return flag ? name : '';
+      }
+      _toggleClass(on, off, flag) {
+        return flag ? on : off;
+      }
+      _classOpenIcon() {
+        return this._visibleView ? 'fa-angle-double-up' : 'fa-angle-double-down';
+      }
+      _validation() {
+        this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(500), () => {
+          this.invalid = !this.$.input.validity.valid;
+        })
+      }
+      _updateHeight() {
+        const container = this.$.container;
+        const input = this.$.input;
+        const len = (this.value || '').length;
+        const style = getComputedStyle(input);
+        const scrollTop = container.scrollTop;
+
+        if (this._len >= len) {
+          input.style.height = 'auto';
+        }
+
+        if (input.scrollHeight > input.clientHeight) {
+          input.style.height = input.scrollHeight + this._diffHeight + 'px';
+        }
+
+        this._len = len;
+        container.scrollTop = scrollTop;
+      }
+      _edit() {
+        const app = this.closest(this.bladeContainer);
+        const template = Polymer.FlattenedNodesObserver.getFlattenedNodes(this).filter(node => node.localName === 'template')[0];
+        let blade = app.querySelector(`#${this._id}`);
+        if (!blade && template) {
+          const content = template.content.cloneNode(true);
+          content.firstElementChild.setAttribute('id', this._id);
+          app.appendChild(content);
+
+          blade = app.querySelector(`#${this._id}`);
+          const close = blade.querySelector('.close');
+          const cancel = blade.querySelector('.cancel');
+          const editor = blade.querySelector('.editor');
+
+          if (editor) {
+            editor.value = this.value;
+          }
+
+          if (close) {
+            close.addEventListener('click', e => {
+              if (editor) {
+                this.value = editor.value;
+              }
+              blade.remove();
+            })
+          }
+          if (cancel) {
+            cancel.addEventListener('click', e => {
+              blade.remove();
+            })
+          }
+
+          this.dispatchEvent(new CustomEvent('edit'));
+        }
+      }
+    }
+
+    window.customElements.define(AiplugsWysiwyg.is, AiplugsWysiwyg);
+  </script>
+</dom-module>

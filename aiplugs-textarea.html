@@ -1,0 +1,198 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-textarea">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: block;
+      }
+
+      :host>div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label,
+      textarea,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      header {
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      textarea {
+        display: block;
+        padding: 12px;
+        background: var(--color-bg-secondary);
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: backgroud linear .25s;
+        overflow-y: auto;
+        overflow-x: hidden;
+        resize: none;
+      }
+
+      :host(:hover) textarea {
+        background: #f0f0f0;
+      }
+
+      textarea:focus,
+      textarea:active {
+        background: var(--color-bg-secondary);
+      }
+
+      :host(:focus-within)>header>label {
+        color: var(--color-primary);
+      }
+
+      :host([invalid]) textarea {
+        background: bisque;
+      }
+
+      :host([invalid]) label {
+        color: var(--color-error) !important;
+      }
+
+      textarea:read-only {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        cursor: not-allowed;
+      }
+
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+    </style>
+
+
+
+    <div id="container">
+      <header>
+        <label>[[label]]</label>
+        <template is="dom-if" if="{{description}}">
+          <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+          <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+        </template>
+      </header>
+      <textarea id="input" name$="[[name]]" type$="[[type]]" value="{{value::input}}" placeholder$="[[placeholder]]" readonly$="[[readonly]]"
+        required$="[[required]]" pattern$="[[pattern]]" on-blur="_validation" on-input="_validation"></textarea>
+      <template is="dom-if" if="{{errorMessage}}">
+        <p class$="message error [[_class('visible', invalid)]]">[[errorMessage]]</p>
+      </template>
+    </div>
+  </template>
+
+  <script>
+    class AiplugsTextarea extends Polymer.Element {
+      static get is() { return 'aiplugs-textarea'; }
+      static get properties() {
+        return {
+          type: {
+            type: String,
+            value: 'text'
+          },
+          name: String,
+          label: String,
+          value: {
+            type: String,
+            value: '',
+            notify: true,
+            observer: '_updateHeight'
+          },
+          placeholder: String,
+          pattern: String,
+          description: String,
+          errorMessage: String,
+          readonly: Boolean,
+          required: Boolean,
+          invalid: {
+            type: Boolean,
+            reflectToAttribute: true
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+        };
+      }
+      connectedCallback() {
+        super.connectedCallback();
+        const input = this.$.input;
+        const style = getComputedStyle(input);
+        this._diffWidth = parseInt(style.paddingLeft) + parseInt(style.paddingRight);
+        this._diffHeight = -(parseInt(style.paddingBottom) + parseInt(style.paddingTop));
+        const next = window.requestIdleCallback || (callback => { setTimeout(callback, 100); });
+        next(() => {
+          this._updateHeight();
+        })
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.input.focus();
+      }
+      _class(name, flag) {
+        return flag ? name : '';
+      }
+      _validation() {
+        this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(500), () => {
+          this.invalid = !this.$.input.validity.valid;
+        })
+      }
+      _updateHeight() {
+        const container = this.$.container;
+        const input = this.$.input;
+        const len = (this.value || '').length;
+        const style = getComputedStyle(input);
+        const scrollTop = container.scrollTop;
+
+        if (this._len >= len) {
+          input.style.height = 'auto';
+        }
+
+        if (input.scrollHeight > input.clientHeight) {
+          input.style.height = input.scrollHeight + this._diffHeight + 'px';
+        }
+
+        this._len = len;
+        container.scrollTop = scrollTop;
+      }
+    }
+
+    window.customElements.define(AiplugsTextarea.is, AiplugsTextarea);
+  </script>
+</dom-module>

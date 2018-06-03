@@ -1,0 +1,52 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-actions">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: row;
+        background: var(--color-bg-primary);
+        padding: 12px;
+      }
+  
+      ::slotted(.full) {
+        width: 100%;
+      }
+  
+      ::slotted(.space) {
+        flex: 1;
+      }
+    </style>
+    <slot></slot>
+  </template>
+
+  <script>
+    class AiplugsActions extends Polymer.Element {
+      static get is() { return 'aiplugs-actions'; }
+      static get properties() {
+        return {
+          items: {
+            type: Number,
+            value: 0,
+            observer: '_update'
+          }
+        };
+      }
+      _update(items){
+        this.querySelectorAll('[when="any"]').forEach(el => {
+          el.disabled = items <= 0;
+        });
+        this.querySelectorAll('[when="one"]').forEach(el => {
+          el.disabled = items != 1;
+        });
+      }
+      ready() {
+        super.ready();
+        this._update(this.items);
+      }
+    }
+
+    window.customElements.define(AiplugsActions.is, AiplugsActions);
+  </script>
+</dom-module>

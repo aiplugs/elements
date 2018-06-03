@@ -1,0 +1,186 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="aiplugs-checkbox">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />    
+    <style>
+      :host {
+        display: block;
+      }
+
+      label,
+      input,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+        user-select: none;
+      }
+
+      .message {
+        display: none;
+        margin: 16px 0 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+      
+      input {
+        display: none;
+      }
+
+      label {
+        user-select: none;
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        padding-left: 32px;
+        height: 24px;
+        line-height: 24px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .25s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-primary);
+      }
+
+      :host([readonly]) label{
+        color: var(--color-text-secondary);        
+      }
+
+      :host([readonly]) select {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary) !important;
+        cursor: not-allowed;
+      }
+      
+      label::before {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 24px;
+        box-sizing: border-box;
+        border-radius: 5px;
+        border: 3px solid var(--color-bg-secondary);
+        background: var(--color-bg-secondary);
+        transition: border-color linear .15s;
+      }
+
+      label:hover::before {
+        border-color: var(--color-primary);      
+      }
+
+      input:checked ~ label::before {
+        display: none;
+      }
+
+      input:active ~ label::after {
+        border: 3px solid var(--color-bg-secondary) !important;        
+      }
+
+      input:checked ~ label::after {
+        content: ' ';
+        display: inline-block;
+        position: absolute;
+        top: -2px;
+        left: 8px;
+        width: 12px;
+        height: 20px;
+        box-sizing: border-box;
+        border-bottom: 3px solid var(--color-primary);
+        border-right: 3px solid var(--color-primary);
+        animation-name: rotate;
+        animation-duration: .15s;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+      }
+
+      @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(45deg); }
+      }
+    
+    </style>
+    <input id="input" type="checkbox" id="input" name$="[[name]]" checked="{{checked::change}}" disabled$="[[readonly]]" readonly$="[[readonly]]">
+    <label for="input">[[label]]</label>
+    <template is="dom-if" if="{{description}}">
+      <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+      <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+    </template>
+  </template>
+  <script>
+    class AiplugsCheckbox extends Polymer.Element {
+      static get is() { return 'aiplugs-checkbox'; }
+      static get properties() {
+        return {
+          label: {
+            type: String,
+            value: ""
+          },
+          name: {
+            type: String,
+            value: ""
+          },
+          checked: {
+            type: Boolean,
+            value: false,
+            notify: true
+          },
+          placeholder: {
+            type: String,
+            value: ""
+          },
+          description: {
+            type: String,
+            value: ""
+          },
+          errorMessage: {
+            type: String,
+            value: ""
+          },
+          readonly: {
+            type: Boolean,
+            value: false
+          },
+          invalid: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          }
+        };
+      }
+      _class(className, flag) {
+        return flag ? className : '';
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+        this.$.input.focus();
+      }
+    }
+
+    window.customElements.define(AiplugsCheckbox.is, AiplugsCheckbox);
+  </script>
+</dom-module>

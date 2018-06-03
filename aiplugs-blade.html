@@ -1,0 +1,103 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-blade">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+        background: var(--color-base, white);
+        min-width: 480px;
+        max-width: 720px;
+        position: relative;
+      }
+
+      :host([mode="wide"]) {
+        max-width: 900px;
+      }
+
+      :host([mode="full"]) {
+        max-width:unset;
+      }
+
+      :host(:not(:last-child)) {
+        border-right: 1px solid var(--color-divider, lightgray);
+      }
+
+      :host([no-header]) header {
+        display: none;
+      }
+
+      header {
+        font-family: var(--base-font-family);
+        font-size: 16px;
+        padding: 12px 24px;
+        line-height: 25px;
+      }
+
+      button {
+        display: block;
+        position: absolute;
+        top:0;
+        right:0;
+        padding: 4px 8px;
+        background: var(--color-base);
+        border: none;
+        outline: none; 
+        color: #bbb;
+      }
+
+      button:hover {
+        color: var(--color-primary);
+      }
+
+      ::slotted(.main) {
+        flex: 1;
+      }
+      ::slotted(.scrollable) {
+        overflow-y: auto;
+        background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+        background: linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+        background-repeat: no-repeat;
+        background-color: white;
+        background-size: 100% 20px, 100% 20px, 100% 5px, 100% 5px;
+        background-attachment: local, local, scroll, scroll;
+      }
+      ::slotted(.padding-side) {
+        padding: 0 20px;
+      }
+    </style>
+    <button on-click="_toggleExpand">
+      <i class$="fa [[_toggleClass('fa-compress', 'fa-expand', expanded)]]"></i>
+    </button>
+    <header>
+      [[label]]
+    </header>
+    <slot></slot>
+  </template>
+
+  <script>
+    class AiplugsBlade extends Polymer.Element {
+      static get is() { return 'aiplugs-blade'; }
+      static get properties() {
+        return {
+          label: String,
+          expanded: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          }
+        };
+      }
+      _toggleClass(on, off, flag) {
+        return flag ? on : off;
+      }
+      _toggleExpand() {
+        this.expanded = !this.expanded;
+      }
+    }
+
+    window.customElements.define(AiplugsBlade.is, AiplugsBlade);
+  </script>
+</dom-module>

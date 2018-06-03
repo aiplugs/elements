@@ -1,0 +1,369 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="aiplugs-array">
+  <template>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+      :host {
+        display: block;
+        --color-line: #e0e0e0;
+        --color-line-accent: #c0c0c0;
+      }
+
+      label,
+      p {
+        font-family: Roboto;
+      }
+
+      i.fa-info-circle {
+        cursor: pointer;
+        margin-left: 4px;
+        user-select: none;
+      }
+
+      .message {
+        display: none;
+        margin: 0 0 16px 0;
+        color: var(--color-text-primary);
+      }
+
+      .message.visible {
+        display: block;
+      }
+
+      .message.error {
+        margin-top: 4px;
+        padding: 0 12px;
+      }
+
+      :host>header>label {
+        user-select: none;
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      label,
+      i {
+        color: var(--color-text-secondary);
+        transition: color linear .15s;
+      }
+
+      :host(:hover) label {
+        color: var(--color-text-primary);
+      }
+
+      :host(:focus-within) label {
+        color: var(--color-primary);
+      }
+
+      :host([readonly]) label {
+        color: var(--color-text-secondary);
+      }
+
+      section {
+        position: relative;
+        padding-left: 12px;
+        margin-left: 12px;
+        border-left: 1px solid var(--color-line);
+        transition: all linear .15s;
+      }
+
+      section:hover {
+        border-color: var(--color-line-accent);
+      }
+
+      section:focus-within {
+        border-color: var(--color-primary);
+      }
+
+      section,
+      section>* {
+        margin-bottom: 24px;
+      }
+
+      section>*:last-child {
+        margin-bottom: 0;
+      }
+
+      button {
+        border: none;
+        outline: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      button:disabled {
+        cursor: auto;
+        opacity: 0.75;
+        ;
+      }
+
+      .actions {
+        position: absolute;
+        right: 0;
+        top: 0;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+
+      .actions button,
+      .actions button i {
+        color: var(--color-text-secondary);
+      }
+
+      .actions button:not(:disabled):hover,
+      .actions button:not(:disabled):hover i,
+      .actions button:not(:disabled):focus,
+      .actions button:not(:disabled):focus i {
+        color: var(--color-primary);
+        text-shadow: 0 0 16px var(--color-primary);
+      }
+
+      .add {
+        display: block;
+        box-sizing: border-box;
+        border-radius: 2px;
+        position: relative;
+        width: 24px;
+        height: 24px;
+        margin-left: 24px;
+        line-height: 24px;
+        text-align: center;
+        background: var(--color-bg-secondary);
+        transition: all linear .15s;
+      }
+
+      .add i {
+        color: var(--color-text-secondary);
+      }
+
+      .add:hover,
+      .add:focus {
+        background: var(--color-primary);
+      }
+
+      .add:hover i,
+      .add:focus i {
+        color: var(--color-text-inverted, white);
+      }
+
+      .add::before {
+        content: '';
+        display: block;
+        box-sizing: border-box;
+        border: 12px solid transparent;
+        border-right-color: var(--color-bg-secondary);
+        border-radius: 2px;
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        top: 0;
+        left: -23.5px;
+        transition: all linear .15s;
+      }
+
+      .add::after {
+        content: '';
+        box-sizing: border-box;
+        border: 1px solid transparent;
+        border-left-color: var(--color-line);
+        position: absolute;
+        height: 24px;
+        top: 0;
+        left: -12px;
+        transition: all linear .15s;
+      }
+
+      .add:hover::before,
+      .add:focus::before {
+        border-right-color: var(--color-primary);
+      }
+
+      .add:hover::after,
+      .add:focus::after {
+        border-left-color: var(--color-primary);
+      }
+      :host([readonly]) header > label{
+        color: var(--color-text-secondary);        
+      }
+    </style>
+    <header>
+      <label>[[label]]</label>
+      <template is="dom-if" if="{{description}}">
+        <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
+        <p class$="message description [[_class('visible', _visibleDescription)]]">[[description]]</p>
+      </template>
+    </header>
+    <div id="container">
+      <dom-repeat id="items" items="{{value}}" observe="*"></dom-repeat>
+    </div>
+    <button class="add" on-click="_add">
+      <i class="fa fa-plus"></i>
+    </button>
+  </template>
+  <script>
+    class AiplugsArray extends Polymer.Element {
+      static get is() { return 'aiplugs-array'; }
+      static get properties() {
+        return {
+          label: {
+            type: String,
+            value: ""
+          },
+          name: {
+            type: String,
+            value: ""
+          },
+          value: {
+            type: Array,
+            value: function () { return []; },
+            notify: true,
+            observer: '__valueChanges'
+          },
+          description: {
+            type: String,
+            value: ""
+          },
+          readonly: {
+            type: Boolean,
+            value: false
+          },
+          _visibleDescription: {
+            type: Boolean,
+            value: false
+          },
+          _focus: {
+            type: Boolean,
+            value: false
+          },
+          as: {
+            type: String,
+            value: 'item'
+          },
+          indexAs: {
+            type: String,
+            value: 'index'
+          },
+          template: String
+        };
+      }
+      static _createId() {
+        AiplugsArray.__count = AiplugsArray.__count || 0;
+        return `${AiplugsArray.is}-${AiplugsArray.__count++}`;
+      }
+      __valueChanges(value) {
+        if (!Array.isArray(value)) {
+          this.value = [];
+        }
+      }
+      ready() {
+        super.ready();
+        if (!this.template) {
+          this._convertTemplate(this);
+        }
+        const template = document.createElement('template');
+        const node = AiplugsArray.__templates[this.template].content.cloneNode(true);
+        while (node.childNodes.length > 0) {
+          template.content.appendChild(node.firstChild);
+        }
+        template.__dataHost = this;
+        this.$.items.appendChild(template);        
+      }
+      
+      _convertTemplate(elem) {
+        if (elem.localName === 'template' && elem.parentElement && elem.parentElement.localName === AiplugsArray.is) {
+          elem.innerHTML =
+            `<section>
+              <div class="actions">
+                [[_displayIndex(index)]]
+                <button class="up" on-click="_up"><i class="fa fa-angle-up"></i></button>
+                <button class="down" on-click="_down"><i class="fa fa-angle-down"></i></button>
+                <button class="remove" on-click="_remove">&times;</button>
+              </div>
+              ${elem.innerHTML}
+            </section>`;
+          const id = AiplugsArray._createId();
+          elem.parentElement.setAttribute('template', id);
+          if (!AiplugsArray.__templates) {
+            AiplugsArray.__templates = {};
+          }
+          AiplugsArray.__templates[id] = elem;
+          for (let child of elem.content.children) {
+            this._convertTemplate(child);
+          }
+          elem.remove();
+        }
+        else {
+          for (let child of elem.children) {
+            this._convertTemplate(child);
+          }
+        }
+      }
+      _class(className, flag) {
+        return flag ? className : '';
+      }
+      _toggleDescription() {
+        this._visibleDescription = !this._visibleDescription;
+      }
+      _add(e) {
+        this.push('value', {});
+        Polymer.RenderStatus.beforeNextRender(this, () => {
+          this._refreshActions();
+        });
+      }
+      _remove(e) {
+        const index = this.$.items.indexForElement(e.target);
+        this.splice('value', index, 1);
+        Polymer.RenderStatus.beforeNextRender(this, () => {
+          this._refreshActions();
+        });        
+      }
+      _up(e) {
+        console.log(this.value);
+        const index = this.$.items.indexForElement(e.target);
+        if (index > 0) {
+          const src = this.value[index];
+          const dst = this.value[index - 1];
+          this.splice('value', index, 1, dst);
+          this.splice('value', index - 1, 1, src);
+        }
+      }
+      _down(e) {
+        const index = this.$.items.indexForElement(e.target);
+        if (index < this.value.length) {
+          const src = this.value[index];
+          const dst = this.value[index + 1];
+          this.splice('value', index, 1, dst);
+          this.splice('value', index + 1, 1, src);
+        }
+      }
+      _displayIndex(index) {
+        return `${this.label}#${index + 1}`;
+      }
+      _refreshActions() {
+        const first = 0;
+        const last = this.value.length - 1;
+        const actions = this.$.container.querySelectorAll('.actions');
+        for (let i = 0; i < actions.length; i++) {
+          const action = actions[i];
+          const up = action.querySelector('.up');
+          const down = action.querySelector('.down');
+          up.disabled = i === first;
+          down.disabled = i === last;
+        }
+      }
+      _onFocus() {
+        this._focus = true;
+      }
+      _onBlur() {
+        this._focus = false;
+      }
+    }
+
+    window.customElements.define(AiplugsArray.is, AiplugsArray);
+  </script>
+</dom-module>

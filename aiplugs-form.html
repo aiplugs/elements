@@ -1,0 +1,62 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/polymer.html">
+<script src="https://unpkg.com/json-schema-ref-parser@4.0.3/dist/ref-parser.min.js"></script>
+<dom-module id="aiplugs-form">
+  <template>
+    <dom-bind id="container"></dom-bind>
+  </template>
+  <script>
+    class AiplugsForm extends Polymer.Element {
+      static get is() { return 'aiplugs-form'; }
+      static get properties() {
+        return {
+          schema: String,
+          data: Object,
+          _schema: {
+            type: Object,
+          }
+        };
+      }
+      _parseSchema(schemaUrl) {
+        return $RefParser.parse(schemaUrl).then(schema => {
+          const hash = schemaUrl.indexOf('#');
+          if (hash === -1)
+            return schema;
+          
+          const path = schemaUrl.slice(hash+1).split('/').filter(_ => _);
+
+          return path.reduce((s, key) => s[key], schema);
+        });
+      }
+      _init(schemaUrl) {
+        this._parseSchema(schemaUrl).then(schema => {
+          const html = this._render(schema, this.data);
+          const template = document.createElement('template');
+          template.insertAdjacentHTML('beforeend', html);
+          this.$.container.appendChild(template);
+        });
+      }
+      _render(schema, data, name, required) {
+        name = name || '';
+        params = params || {};
+        if (schema.type === 'object') {
+          if (false) {
+            
+          }
+          else {
+            return this._renderObject(schema, data, name, params);
+          }
+        }
+      }
+      _renderObject(schema, data, name) {
+        return Object.keys(schema.properties).map(key => {
+          const _name = [name, key].filter(n => n !== '').join('.');
+          const _required = !!(schema.required || []).find(k => k === key);
+          return this._render(schema, data[key], _name, _required);
+        }).join();
+      }
+    }
+
+    window.customElements.define(AiplugsForm.is, AiplugsForm);
+  </script>
+</dom-module>

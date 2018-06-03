@@ -1,0 +1,46 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="aiplugs-nav-items">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+        width: calc(64px + 180px);
+        color: var(--color-text-inverted);
+        overflow: hidden;
+        transition: all linear .05s;
+        position: relative;
+        z-index: 0;
+      }
+      :host(:first-child)::before {
+        content: "";
+        position: absolute;
+        width: calc(100vw + 10px);
+        height: calc(100vh + 10px);
+        top: -5px;
+        bottom: -5px;
+        left: -5px;
+        right: -5px;
+        filter: blur(5px);
+        background: linear-gradient(0deg, rgba(91, 134, 229, 0.4), rgba(54, 209, 220, 0.4)), var(--bg-image-primary);
+        background-size: cover;  
+  
+        z-index: -1;  
+      }
+    </style>
+    <slot></slot>
+    <slot name="bottom"></slot>
+  </template>
+
+  <script>
+    class AiplugsNavItems extends Polymer.Element {
+      static get is() { return 'aiplugs-nav-items'; }
+      static get properties() {
+        return {};
+      }
+    }
+
+    window.customElements.define(AiplugsNavItems.is, AiplugsNavItems);
+  </script>
+</dom-module>
