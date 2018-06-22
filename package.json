@@ -2,9 +2,7 @@
   "name": "aiplugs-elements",
   "version": "0.9.20",
   "description": "aiplugs custom elements",
-  "main": "index.js",
   "scripts": {
-    "dev": "./node_modules/.bin/http-server ./",
     "publish": "node publish.js",
     "test": ""
   },
@@ -22,6 +20,5 @@
   },
   "homepage": "https://github.com/aiplugs/elements#readme",
   "devDependencies": {
-    "http-server": "^0.10.0"
   }
 }
