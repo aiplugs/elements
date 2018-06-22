@@ -28,8 +28,8 @@ aiplugs-nav-items,
 aiplugs-nav-item {
     --color-text-inverted: white;
     --color-accent: #2067f3;
-    --bg-image-primary: url('img/bg7.jpg');
-    --bg-image-secondary: url('img/bg7.jpg');
+    --bg-image-primary: url('img/bg.webp');
+    --bg-image-secondary: url('img/bg.webp');
 }
 
 aiplugs-actions {
