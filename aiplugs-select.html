@@ -226,17 +226,17 @@
       </template>
     </header>
     <template is="dom-if" if="{{_eq('select', type)}}">
-      <select id="input" name$="[[_name]]" disabled$="[[readonly]]" required$="[[required]]" multiple$="[[multiple]]" on-change="_validation" on-blur="_validation">
+      <select id="input" name$="[[_name]]" disabled$="[[readonly]]" required$="[[required]]" multiple$="[[multiple]]" on-change="_onSelected" on-blur="_validation">
         <option>[[placeholder]]</option>
         <template is="dom-repeat" items="{{options}}">
-          <option value="[[item.value]]">[[item.label]]</option>
+          <option value="[[item.value]]" selected$="{{_selected(item.value)}}">[[item.label]]</option>
         </template>
       </select>
     </template>
     <template is="dom-if" if="{{_eq('checkbox', type)}}">
       <template is="dom-repeat" items="{{options}}">
         <div class="choice">
-          <input type="checkbox" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]">
+          <input type="checkbox" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]" value$="[[item.value]]" checked$="{{_selected(item.value)}}" on-click="_onSelected">
           <label for$="[[name]][[index]]">[[item.label]]</label>
         </div>
       </template>
@@ -244,7 +244,7 @@
     <template is="dom-if" if="{{_eq('radio', type)}}">
       <template is="dom-repeat" items="{{options}}">
         <div class="choice">
-          <input type="radio" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]" required$="[[required]]">
+          <input type="radio" id$="[[name]][[index]]" name$="[[_name]]" disabled$="[[readonly]]" readonly$="[[readonly]]" required$="[[required]]" value$="[[item.value]]" checked$="{{_selected(item.value)}}" on-click="_onSelected">
           <label for$="[[name]][[index]]">[[item.label]]</label>
         </div>
       </template>
@@ -270,6 +270,10 @@
           name: {
             type: String,
             value: null
+          },
+          value: {
+            type: Object,
+            notify: true,
           },
           multiple: {
             type: Boolean,
@@ -345,15 +349,31 @@
       _validation() {
         if (this.type === 'select') {
           const select = this.shadowRoot.querySelector('#input');
-          const length = select.querySelectorAll('option[selected]').length;
+          const length = select.querySelectorAll('option:checked').length;
           this.invalid = !select.validity.valid || length < this.min  && length > this.max;        
         }
+      }
+      _selected(value) {
+        if (Array.isArray(this.value)) {
+          return this.value.indexOf(value) != -1;
+        }
+        return this.value == value;
+      }
+      _onSelected() {
+        if (this.type === 'select') {
+          const select = this.shadowRoot.querySelector('#input'); 
+          const selected = select.querySelectorAll('option:checked');
+          this.value = this.multiple ? Array.from(selected).map(s => s.value) : selected[0].value;
+          this._validation();
+        }
         else if (this.type === 'checkbox') {
+          const checked = this.shadowRoot.querySelectorAll('input:checked');
+          this.value = Array.from(checked).map(c => c.value);
         }
         else if (this.type === 'radio') {
-
+          const checked = this.shadowRoot.querySelector('input:checked');
+          this.value = checked.value;
         }
-        
       }
     }
 

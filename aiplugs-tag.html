@@ -193,7 +193,7 @@
 
     <div id="values" class$="{{_class('focus', _focus)}} {{_class('focus-last', _focusLast)}} {{_class('readonly', readonly)}}"
       on-click="_focusInput">
-      <template is="dom-repeat" id="tags" items="{{value}}">
+      <template is="dom-repeat" id="tags" items="{{_value}}">
         <span class="tag">
           <span>{{_getTagLabel(item)}}</span>
           <button class="close" on-click="_remove" disabled$="{{readonly}}">&times;</button>
@@ -249,6 +249,16 @@
           ajaxValue: {
             type: String,
             value: 'value'
+          },
+          ajaxMethod: {
+            type: String,
+            value: 'GET'
+          },
+          ajaxHeaders: {
+            type: Object,
+            value: function () {
+              return {}
+            }
           },
           suggestion: {
             type: Array,
@@ -306,8 +316,28 @@
           _focusLast: {
             type: Boolean,
             value: false
+          },
+          _value: {
+            type: Array,
+            value: function() {
+              return [];
+            }
           }
         };
+      }
+      ready() {
+        super.ready();
+        this.value.forEach(v => {
+          if (this.ajaxUri) {
+            this._fetchSuggestion(v).then(suggestion => {
+              const tag = this.ignoreCase ? suggestion.find(tag => tag.value.toString().toLowerCase() === v) 
+                                          : suggestion.find(tag => tag.value === v);
+              this.push('_value', tag);
+            })  
+          } else {
+            this.push('_value', {label: v, value: v});
+          }
+        })
       }
       _add() {
         if (this._invalidPattern || this.$.input.value.length === 0)
@@ -321,18 +351,21 @@
           return;
 
         const exists = this.ignoreCase
-          ? item => this.value.find(o => o.value.toString().toLowerCase() == item.toLowerCase())
-          : item => this.value.find(o => o.value == item);
+          ? item => this.value.find(v => v.toString().toLowerCase() == item.toLowerCase())
+          : item => this.value.find(v => v == item);
 
         if (!exists(value)) {
-          this.push('value', { label, value });
+          this.push('value', value);
+          this.push('_value', { label, value });
           this.$.input.value = '';
         }
       }
       _remove(e) {
         const index = this.$.tags.indexForElement(e.target);
         if (index >= 0) {
-          this.value = this.value.filter((_, i) => i != index);
+          this.splice('value', index, 1);
+          this.splice('_value', index, 1);
+
           this._validation();
         }
       }
@@ -340,6 +373,7 @@
         if (this.$.input.value.length === 0 && this.value.length > 0) {
           if (this._focusLast) {
             this.pop('value');
+            this.pop('_value');
             this._focusLast = false;
           }
           else {
@@ -412,21 +446,33 @@
       _loadSuggestion() {
         this._sDebouncer = Polymer.Debouncer.debounce(this._sDebouncer, Polymer.Async.timeOut.after(250), () => {
           const value = this.$.input.value;
-          const uri = this.ajaxUri || '';
+          if (this.ajaxUri) {
+            this._fetchSuggestion(value).then(suggestion => {
+              this.suggestion = suggestion;
+            });
+          }
+        })
+      }
+      _fetchSuggestion(value) {
+        return new Promise((resolve, reject) => {
+          const uri = this.ajaxUri;
           const req = uri + (uri.indexOf('?') >= 0 ? '&' : '?') + this.ajaxKey + '=' + encodeURIComponent(value);
           fetch(req).then(res => {
             if (res.ok) {
               const labelKey = this.ajaxLabel;
               const valueKey = this.ajaxValue;
               res.json().then(suggestion => {
-                this.suggestion = suggestion.map(s => ({ 
+                resolve(suggestion.map(s => ({ 
                   label: s[labelKey], 
                   value: s[valueKey] 
-                }))
+                })));
               })
             }
+          }).catch(() => {
+            reject(...arguments);
           })
-        })
+        });
+        
       }
       _hasSuggestion() {
         return this.suggestion.length > 0;

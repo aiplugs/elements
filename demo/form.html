@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
-  <title>File Manager</title>
+  <title>Form</title>
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <link rel="import" href="../aiplugs-elements.html">
   <link rel="import" href="../../paper-styles/color.html">
@@ -12,88 +12,7 @@
   <link rel="import" href="../../vaadin-dialog/vaadin-dialog.html">
   <link rel="import" href="../../iron-form/iron-form.html">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa">
-  <style>
-    :root,
-    aiplugs-grid {
-      --color-base: #fff;
-      --color-bg-primary: #fdfdfd;
-      --color-bg-secondary: #f3f3f3;
-      --color-divider: #f0f0f0;
-      --color-text-primary: #222;
-      --color-text-secondary: #8a8a8a;
-      --color-text-inverted: #f3f3f3;
-      --color-primary: #2196f3;
-      --color-accent: #2067f3;
-      --color-secondary: #cfedfc;
-      --color-error: #f32043;
-      --icon-font-family: FontAwesome;
-      --base-font-family: 'Roboto', 'Noto Sans Japanese';
-      --icon-home: '\f015';
-      --icon-upload: '\f0ee';
-      --bg-image-primary: linear-gradient(0deg, var(--color-primary), var(--color-primary));
-      --bg-image-secondary: linear-gradient(0deg, var(--color-base), var(--color-base));
-
-      font-family: var(--base-font-family);
-      background: var(--color-base);
-      color: var(--color-text-primary)
-    }
-
-    aiplugs-app,
-    aiplugs-nav-items,
-    aiplugs-nav-item {
-      --color-text-inverted: white;
-      --color-accent: #2067f3;
-      --bg-image-primary: url('img/bg7.webp');
-      --bg-image-secondary: url('img/bg7.webp');
-    }
-
-    aiplugs-actions {
-      --color-bg: #fdfdfd;
-    }
-
-    aiplugs-nav-items.fold aiplugs-nav-item span,
-    aiplugs-nav-items.fold aiplugs-nav-items {
-      display: none;
-    }
-
-    aiplugs-nav-items.fold {
-      width: 64px;
-    }
-
-    aiplugs-app>section {
-      background: white;
-      min-width: 480px;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    aiplugs-app>section:not(:last-child) {
-      border-right: 1px solid var(--color-divider)
-    }
-
-    aiplugs-grid {
-      flex: 1;
-      overflow: hidden;
-    }
-
-    vaadin-button {
-      margin-left: 8px;
-      margin-right: 8px;
-    }
-
-    aiplugs-input,
-    aiplugs-textarea,
-    aiplugs-wysiwyg,
-    aiplugs-code,
-    aiplugs-tag,
-    aiplugs-select,
-    aiplugs-checkbox,
-    aiplugs-dictionary,
-    aiplugs-array {
-      margin-bottom: 24px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -106,7 +25,7 @@
       <aiplugs-nav-item class="fold-action">
         <i slot="icon" class="fa fa-bars"></i>
       </aiplugs-nav-item>
-      <aiplugs-nav-item>
+      <aiplugs-nav-item href="storage.html">
         <i slot="icon" class="fa fa-folder"></i>
         <span>Files</span>
       </aiplugs-nav-item>
@@ -119,9 +38,7 @@
         <span>Collections</span>
       </aiplugs-nav-item>
       <aiplugs-nav-items>
-        <aiplugs-nav-item class="active">Blog Posts</aiplugs-nav-item>
-        <aiplugs-nav-item>News</aiplugs-nav-item>
-        <aiplugs-nav-item>Staic Pages</aiplugs-nav-item>
+        <aiplugs-nav-item href="form.html" class="active">Sample Collection</aiplugs-nav-item>
       </aiplugs-nav-items>
       <aiplugs-nav-item>
         <i slot="icon" class="fa fa-cog"></i>
@@ -139,13 +56,13 @@
       </aiplugs-nav-item>
     </aiplugs-nav-items>
     <aiplugs-blade label="Blog Posts / New Item">
-      <iron-form>
+      <aiplugs-actions>
+        <vaadin-button theme="small" id="save">Save</vaadin-button>
+        <vaadin-button theme="small tertiary">Cancel</vaadin-button>
+      </aiplugs-actions>
+      <iron-form id="form1" class="main scrollable padding-side">
         <form>
-          <aiplugs-actions>
-            <vaadin-button theme="small">Save</vaadin-button>
-            <vaadin-button theme="small tertiary">Cancel</vaadin-button>
-          </aiplugs-actions>
-          <aiplugs-form schema="data/schema.json">
+          <aiplugs-form schema="data/schema.json" value='{"tag":["JavaScript"]}'>
           </aiplugs-form>
         </form>
       </iron-form>
@@ -153,9 +70,14 @@
   </aiplugs-app>
 
   <script src="js/resize.js"></script>
-  <!-- <script>
-    const wysiwyg = document.querySelector('aiplugs-wysiwyg');
-    wysiwyg.addEventListener('edit', function () {
+  <script>
+    document.getElementById('save').addEventListener('click', e  => {
+      const data = document.getElementById('form1').serializeForm();
+      console.log(data);
+    });
+  </script>
+  <script>
+    function sample() {
       const data = [
         {
           type: 'folder', name: 'Sample 1', children: [
@@ -172,6 +94,10 @@
       for (let i = 1; i <= 100; i++) {
         data.push({ type: 'file', name: `sample${i}.txt`, lastModifydAt: '1 min ago' })
       }
+      return data;
+    }
+    function onEdit() {
+      const data = sample();
       const editor = document.querySelector('aiplugs-tinymce');
       const dialog = editor.$.fileDialog;
       const update = path => {
@@ -204,8 +130,15 @@
           editor.insertMedia('https://www.html5rocks.com/ja/tutorials/video/basics/Chrome_ImF.mp4');
         }
       });
-    })
-  </script> -->
+    }
+    window.addEventListener('WebComponentsReady', function() {
+      const form = document.querySelector('aiplugs-form');
+      const wysiwygs = form.shadowRoot.querySelectorAll('aiplugs-wysiwyg');
+      for (let wysiwyg of wysiwygs) {
+        wysiwyg.addEventListener('edit', onEdit);
+      }
+    });
+  </script>
 </body>
 
 </html>

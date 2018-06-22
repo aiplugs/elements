@@ -120,7 +120,7 @@
       }
     
     </style>
-    <input id="input" type="checkbox" id="input" name$="[[name]]" checked="{{checked::change}}" disabled$="[[readonly]]" readonly$="[[readonly]]">
+    <input id="input" type="checkbox" id="input" name$="[[name]]" checked="{{checked::change}}" disabled$="[[readonly]]" readonly$="[[readonly]]" on-change="_onChange">
     <label for="input">[[label]]</label>
     <template is="dom-if" if="{{description}}">
       <i id="info" class="fa fa-info-circle" on-click="_toggleDescription"></i>
@@ -139,6 +139,11 @@
           name: {
             type: String,
             value: ""
+          },
+          value: {
+            type: Boolean,
+            value: false,
+            notify: true
           },
           checked: {
             type: Boolean,
@@ -178,6 +183,9 @@
       _toggleDescription() {
         this._visibleDescription = !this._visibleDescription;
         this.$.input.focus();
+      }
+      _onChange() {
+        this.value = this.$.input.checked;
       }
     }
 

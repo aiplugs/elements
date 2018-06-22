@@ -1,0 +1,74 @@
+:root,
+aiplugs-grid {
+    --color-base: #fff;
+    --color-bg-primary: #fdfdfd;
+    --color-bg-secondary: #f3f3f3;
+    --color-divider: #f0f0f0;
+    --color-text-primary: #222;
+    --color-text-secondary: #8a8a8a;
+    --color-text-inverted: #f3f3f3;
+    --color-primary: #2196f3;
+    --color-accent: #2067f3;
+    --color-secondary: #cfedfc;
+    --color-error: #f32043;
+    --icon-font-family: FontAwesome;
+    --base-font-family: 'Roboto', 'Noto Sans Japanese';
+    --icon-home: '\f015';
+    --icon-upload: '\f0ee';
+    --bg-image-primary: linear-gradient(0deg, var(--color-primary), var(--color-primary));
+    --bg-image-secondary: linear-gradient(0deg, var(--color-base), var(--color-base));
+
+    font-family: var(--base-font-family);
+    background: var(--color-base);
+    color: var(--color-text-primary)
+}
+
+aiplugs-app,
+aiplugs-nav-items,
+aiplugs-nav-item {
+    --color-text-inverted: white;
+    --color-accent: #2067f3;
+    --bg-image-primary: url('img/bg7.jpg');
+    --bg-image-secondary: url('img/bg7.jpg');
+}
+
+aiplugs-actions {
+    --color-bg: #fdfdfd;
+}
+
+aiplugs-nav-items.fold aiplugs-nav-item span,
+aiplugs-nav-items.fold aiplugs-nav-items {
+    display: none;
+}
+
+aiplugs-nav-items.fold {
+    width: 64px;
+}
+
+aiplugs-app>section {
+    background: white;
+    min-width: 480px;
+    max-width: 960px;
+    display: flex;
+    flex-direction: column;
+}
+
+aiplugs-app>section.scrollable {
+    display: block;
+    overflow-y: auto;
+}
+
+aiplugs-grid {
+    flex: 1;
+    overflow: hidden;
+}
+
+vaadin-button {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+aiplugs-input,
+aiplugs-textarea {
+    margin-bottom: 24px;
+}

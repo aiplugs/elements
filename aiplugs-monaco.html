@@ -61,8 +61,9 @@
 
         this._fire = fire;        
         this.$.editor.src = src;
-
-        window.addEventListener('message', evt => {
+        
+        const self = this;
+        this.__onmessage = function onMessage(evt) {
           if (evt.origin !== origin)
             return
 
@@ -73,23 +74,30 @@
           const type = data.type
 
           if (type === event('change')) {
-            this.value = data.value;
+            self.value = data.value;
           }
           else if (type === event('created')) {
-            fire('setup', { opts: this.opts });
-            fire('update', { value: this.value });
-            this._setJsonSchema(this.jsonschema);
+            fire('setup', { opts: self.opts });
+            fire('update', { value: self.value });
+            self._setJsonSchema(self.jsonschema);
           }
-        })
+        }
+        window.addEventListener('message', this.__onmessage)
+      }
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('message', this.__onmessage);
       }
       _setJsonSchema(uri) {
-        fetch(uri, {mode: 'cors'}).then(res => {
-          if (res.ok) {
-            res.json().then(schema => {
-              this._fire('append.jsonschema', { uri, schema });
-            })
-          }
-        })
+        if (uri) {
+          fetch(uri, {mode: 'cors'}).then(res => {
+            if (res.ok) {
+              res.json().then(schema => {
+                this._fire('append.jsonschema', { uri, schema });
+              })
+            }
+          })
+        }
       }
     }
 

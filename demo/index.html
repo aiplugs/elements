@@ -1,30 +1,62 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>aiplugs-elements demo</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+  <title>File Manager</title>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="../aiplugs-elements.html">
+  <link rel="import" href="../../paper-styles/color.html">
+  <link rel="import" href="../../vaadin-button/vaadin-button.html">
+  <link rel="import" href="../../vaadin-dialog/vaadin-dialog.html">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa">
+  <link rel="stylesheet" href="css/style.css">
+</head>
 
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+<body>
+  <aiplugs-app>
+    <aiplugs-nav-items slot="side">
+      <aiplugs-nav-item class="logo" href="#top">
+        <img slot="icon" src="img/icon.svg" alt="aiplugs" width="32">
+        <span>aiplugs cms</span>
+      </aiplugs-nav-item>
+      <aiplugs-nav-item class="fold-action">
+        <i slot="icon" class="fa fa-bars"></i>
+      </aiplugs-nav-item>
+      <aiplugs-nav-item class="active">
+        <i slot="icon" class="fa fa-folder"></i>
+        <span>Files</span>
+      </aiplugs-nav-item>
+      <aiplugs-nav-item>
+        <i slot="icon" class="fa fa-sticky-note"></i>
+        <span>Templates</span>
+      </aiplugs-nav-item>
+      <aiplugs-nav-item>
+        <i slot="icon" class="fa fa-database"></i>
+        <span>Collections</span>
+      </aiplugs-nav-item>
+      <aiplugs-nav-items>
+        <aiplugs-nav-item href="form.html">Sample Collection</aiplugs-nav-item>
+      </aiplugs-nav-items>
+      <aiplugs-nav-item>
+        <i slot="icon" class="fa fa-cog"></i>
+        <span>Settings</span>
+      </aiplugs-nav-item>
+      <aiplugs-nav-items>
+        <aiplugs-nav-item>Collections</aiplugs-nav-item>
+        <aiplugs-nav-item>Users</aiplugs-nav-item>
+        <aiplugs-nav-item>App Settings</aiplugs-nav-item>
+      </aiplugs-nav-items>
+      <aiplugs-nav-separator></aiplugs-nav-separator>
+      <aiplugs-nav-item slot="bottom">
+        <img slot="icon" src="https://avatars2.githubusercontent.com/u/1011232?s=32&u=332a5b77904556e83686f16105a3355f46c82292&v=4"
+          alt="iwate" width="32"> iwate
+      </aiplugs-nav-item>
+    </aiplugs-nav-items>
+  </aiplugs-app>
 
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
-    <link rel="import" href="../aiplugs-elements.html">
+  <script src="js/resize.js"></script>
+</body>
 
-    <custom-style>
-      <style is="custom-style" include="demo-pages-shared-styles">
-      </style>
-    </custom-style>
-  </head>
-  <body>
-    <div class="vertical-section-container centered">
-      <h3>Basic aiplugs-elements demo</h3>
-      <demo-snippet>
-        <template>
-          <aiplugs-elements></aiplugs-elements>
-        </template>
-      </demo-snippet>
-    </div>
-  </body>
 </html>

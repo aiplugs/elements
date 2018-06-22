@@ -11,86 +11,7 @@
   <link rel="import" href="../../vaadin-button/vaadin-button.html">
   <link rel="import" href="../../vaadin-dialog/vaadin-dialog.html">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa">
-  <style>
-    :root, aiplugs-grid {
-      --color-base: #fff;
-      --color-bg-primary: #fdfdfd;
-      --color-bg-secondary: #f3f3f3;
-      --color-divider: #f0f0f0;
-      --color-text-primary: #222;
-      --color-text-secondary: #8a8a8a;
-      --color-text-inverted: #f3f3f3;
-      --color-primary: #2196f3;
-      --color-accent: #2067f3;
-      --color-secondary: #cfedfc;
-      --color-error: #f32043;
-      --icon-font-family: FontAwesome;
-      --base-font-family: 'Roboto', 'Noto Sans Japanese';
-      --icon-home: '\f015';
-      --icon-upload: '\f0ee';
-      --bg-image-primary: linear-gradient(0deg, var(--color-primary), var(--color-primary));
-      --bg-image-secondary: linear-gradient(0deg, var(--color-base), var(--color-base));
-
-      font-family: var(--base-font-family);
-      background: var(--color-base);
-      color: var(--color-text-primary)
-    }
-    aiplugs-app,
-    aiplugs-nav-items,
-    aiplugs-nav-item {
-      --color-text-inverted: white;
-      --color-accent: #2067f3;
-      --bg-image-primary: url('img/bg7.jpg');
-      --bg-image-secondary: url('img/bg7.jpg');
-    }
-
-    aiplugs-actions {
-      --color-bg: #fdfdfd; 
-    }
-
-    aiplugs-nav-items.fold aiplugs-nav-item span,
-    aiplugs-nav-items.fold aiplugs-nav-items {
-      display: none;
-    }
-
-    aiplugs-nav-items.fold {
-      width: 64px;
-    }
-
-    aiplugs-app > section {
-      background: white;
-      min-width: 480px;
-      max-width: 720px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    aiplugs-grid {
-      flex:1;
-      overflow: hidden;
-    }
-
-    vaadin-button {
-      margin-left: 8px; 
-      margin-right: 8px; 
-    }
-    
-  </style>
-  <style is="custom-style">
-    paper-button.primary {
-      color: var(--color-text-inverted);
-      background-color: var(--color-primary);
-      /* --paper-button-ink-color: var(--paper-pink-a200); */
-      /* --paper-button-flat-keyboard-focus: {
-        background-color: var(--paper-pink-a200);
-        color: white !important;
-      };
-      --paper-button-raised-keyboard-focus: {
-        background-color: var(--paper-pink-a200) !important;
-        color: white !important;
-      }; */
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -116,9 +37,7 @@
         <span>Collections</span>
       </aiplugs-nav-item>
       <aiplugs-nav-items>
-        <aiplugs-nav-item>Blog Posts</aiplugs-nav-item>
-        <aiplugs-nav-item>News</aiplugs-nav-item>
-        <aiplugs-nav-item>Staic Pages</aiplugs-nav-item>
+        <aiplugs-nav-item href="form.html">Sample Collection</aiplugs-nav-item>
       </aiplugs-nav-items>
       <aiplugs-nav-item>
         <i slot="icon" class="fa fa-cog"></i>

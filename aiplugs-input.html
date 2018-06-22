@@ -121,7 +121,7 @@
       <template is="dom-if" if="{{_needUniqueInfo(unique, value)}}">
         <i class$="unique-info fa {{_toggle('fa-times-circle', 'fa-check-circle', _duplicated)}}"></i>
       </template>
-      <input id="input" list="suggestion" name$="[[name]]" type$="[[type]]" value="{{value::input}}" placeholder$="[[placeholder]]" readonly$="[[readonly]]"
+      <input id="input" list="suggestion" name$="[[name]]" type$="[[type]]" value="{{value::input}}" placeholder$="[[placeholder]]" readonly$="[[readonly]]" step$="[[step]]" min$="[[min]]" max$="[[max]]" 
         required$="[[required]]" pattern$="[[pattern]]" on-blur="_onBlur" on-keydown="_onKeydown">
     </div>
     <datalist id="suggestion">
@@ -146,6 +146,9 @@
           },
           name: String,
           label: String,
+          step: Number,
+          min: Number,
+          max: Number,
           value: {
             type: String,
             value: '',
@@ -166,6 +169,16 @@
           ajaxValue: {
             type: String,
             value: 'value'
+          },
+          ajaxMethod: {
+            type: String,
+            value: 'GET'
+          },
+          ajaxHeaders: {
+            type: Object,
+            value: function () {
+              return {}
+            }
           },
           suggestion: {
             type: Array,
@@ -228,6 +241,9 @@
         }
       }
       _loadSuggestion() {
+        if (!this.ajaxUri)
+          return;
+        
         const value = this.$.input.value;
         const uri = this.ajaxUri || '';
         const req = uri + (uri.indexOf('?') >= 0 ? '&' : '?') + this.ajaxKey + '=' + encodeURIComponent(value);

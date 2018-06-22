@@ -251,7 +251,7 @@
         container.scrollTop = scrollTop;
       }
       _edit() {
-        const app = this.closest(this.bladeContainer);
+        const app = document.querySelector(this.bladeContainer);
         const template = Polymer.FlattenedNodesObserver.getFlattenedNodes(this).filter(node => node.localName === 'template')[0];
         let blade = app.querySelector(`#${this._id}`);
         if (!blade && template) {

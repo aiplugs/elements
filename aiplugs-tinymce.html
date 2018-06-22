@@ -31,6 +31,9 @@
   </template>
 
   <script>
+    function onMessage(evt) {
+
+    }
     class AiplugsTinyMCE extends Polymer.Element {
       static get is() { return 'aiplugs-tinymce'; }
       static get properties() {
@@ -63,7 +66,8 @@
           fire('init', { opts: this.opts });
         })
 
-        window.addEventListener('message', evt => {
+        const self = this;
+        this.__onmessage = function onMessage(evt) {
           if (evt.origin !== origin)
             return
 
@@ -74,18 +78,24 @@
           const type = data.type
 
           if (type === event('change')) {
-            this.value = data.value;
+            self.value = data.value;
           }
           else if (type === event('click.image')) {
-            this._openDialog(['image']);
+            self._openDialog(['image']);
           }
           else if (type === event('click.media')) {
-            this._openDialog(['video']);
+            self._openDialog(['video']);
           }
           else if (type === event('created')) {
-            fire('update', { value: this.value });
+            fire('update', { value: self.value });
           }
-        })
+        }
+        
+        window.addEventListener('message', this.__onmessage);
+      }
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('message', this.__onmessage);
       }
       _openDialog(accepts) {
         this.$.fileDialog.open(accepts);

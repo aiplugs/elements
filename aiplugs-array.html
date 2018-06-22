@@ -323,7 +323,6 @@
         });        
       }
       _up(e) {
-        console.log(this.value);
         const index = this.$.items.indexForElement(e.target);
         if (index > 0) {
           const src = this.value[index];
@@ -339,6 +338,7 @@
           const dst = this.value[index + 1];
           this.splice('value', index, 1, dst);
           this.splice('value', index + 1, 1, src);
+          console.log(this.value)
         }
       }
       _displayIndex(index) {

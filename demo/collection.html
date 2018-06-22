@@ -11,82 +11,7 @@
   <link rel="import" href="../../vaadin-button/vaadin-button.html">
   <link rel="import" href="../../vaadin-dialog/vaadin-dialog.html">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Comfortaa">
-  <style>
-    :root,
-    aiplugs-grid {
-      --color-base: #fff;
-      --color-bg-primary: #fdfdfd;
-      --color-bg-secondary: #f3f3f3;
-      --color-divider: #f0f0f0;
-      --color-text-primary: #222;
-      --color-text-secondary: #8a8a8a;
-      --color-text-inverted: #f3f3f3;
-      --color-primary: #2196f3;
-      --color-accent: #2067f3;
-      --color-secondary: #cfedfc;
-      --color-error: #f32043;
-      --icon-font-family: FontAwesome;
-      --base-font-family: 'Roboto', 'Noto Sans Japanese';
-      --icon-home: '\f015';
-      --icon-upload: '\f0ee';
-      --bg-image-primary: linear-gradient(0deg, var(--color-primary), var(--color-primary));
-      --bg-image-secondary: linear-gradient(0deg, var(--color-base), var(--color-base));
-
-      font-family: var(--base-font-family);
-      background: var(--color-base);
-      color: var(--color-text-primary)
-    }
-
-    aiplugs-app,
-    aiplugs-nav-items,
-    aiplugs-nav-item {
-      --color-text-inverted: white;
-      --color-accent: #2067f3;
-      --bg-image-primary: url('img/bg7.jpg');
-      --bg-image-secondary: url('img/bg7.jpg');
-    }
-
-    aiplugs-actions {
-      --color-bg: #fdfdfd;
-    }
-
-    aiplugs-nav-items.fold aiplugs-nav-item span,
-    aiplugs-nav-items.fold aiplugs-nav-items {
-      display: none;
-    }
-
-    aiplugs-nav-items.fold {
-      width: 64px;
-    }
-
-    aiplugs-app>section {
-      background: white;
-      min-width: 480px;
-      max-width: 960px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    aiplugs-app>section.scrollable {
-      display: block;
-      overflow-y: auto;
-    }
-
-    aiplugs-grid {
-      flex: 1;
-      overflow: hidden;
-    }
-
-    vaadin-button {
-      margin-left: 8px;
-      margin-right: 8px;
-    }
-
-    aiplugs-input,
-    aiplugs-textarea {
-      margin-bottom: 24px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -99,7 +24,7 @@
       <aiplugs-nav-item class="fold-action">
         <i slot="icon" class="fa fa-bars"></i>
       </aiplugs-nav-item>
-      <aiplugs-nav-item class="active">
+      <aiplugs-nav-item href="storage.html">
         <i slot="icon" class="fa fa-folder"></i>
         <span>Files</span>
       </aiplugs-nav-item>
@@ -112,9 +37,7 @@
         <span>Collections</span>
       </aiplugs-nav-item>
       <aiplugs-nav-items>
-        <aiplugs-nav-item>Blog Posts</aiplugs-nav-item>
-        <aiplugs-nav-item>News</aiplugs-nav-item>
-        <aiplugs-nav-item>Staic Pages</aiplugs-nav-item>
+        <aiplugs-nav-item class="active" href="form.html">Sample Collection</aiplugs-nav-item>
       </aiplugs-nav-items>
       <aiplugs-nav-item>
         <i slot="icon" class="fa fa-cog"></i>
@@ -171,153 +94,10 @@
 
       </aiplugs-grid>
     </section>
-    <section class="scrollable">
-      <header style="padding: 12px 24px;font-size: 16px;line-height: 25px;">
-        Collection Item
-      </header>
-      <aiplugs-actions>
-        <vaadin-button theme="small">Save</vaadin-button>
-        <vaadin-button theme="small tertiary">Cancel</vaadin-button>
-      </aiplugs-actions>
-      <div style="padding: 0 20px;">
-        <aiplugs-input type="email" label="Label" description="This is sample input field" placeholder="sample@aiplugs.com" error-message="This need email value like as 'sample@aiplugs.com'">
-        </aiplugs-input>
-        <aiplugs-input label="Label" description="" pattern="^\d{3}$" error-message="has error"></aiplugs-input>
-        <aiplugs-input label="DateTime" type="datetime-local" description="" pattern="^\d{3}$" error-message="has error"></aiplugs-input>
-        <aiplugs-input label="Read Only" value="readonly" readonly></aiplugs-input>
-        <aiplugs-textarea label="Text Area" value="Hello,World
-Hello, World!"></aiplugs-textarea>
-        <aiplugs-textarea label="Body" readonly value="Hello,World
-Hello, World!"></aiplugs-textarea>
-        <aiplugs-input label="Label" description="" pattern="^\d{3}$" error-message="has error"></aiplugs-input>
-      </div>
-    </section>
-    <section class="flex">
-      <header style="padding: 12px 24px;font-size: 16px;line-height: 25px;">
-        Wysiwyg
-      </header>
-      <aiplugs-actions>
-        <vaadin-button theme="small">Close</vaadin-button>
-        <vaadin-button theme="small tertiary">Cancel</vaadin-button>
-      </aiplugs-actions>
-      <aiplugs-wysiwyg name="wysiwyg" style="flex:1;padding: 0 20px;">
-      </aiplugs-wysiwyg>
-    </section>
+
   </aiplugs-app>
 
   <script src="js/resize.js"></script>
-  <script>
-    function initStorage(a, b, g) {
-      const data = [
-        {
-          type: 'folder', name: 'Sample 1', children: [
-            {
-              type: 'folder', name: 'Sample A', children: [
-                { type: 'file', name: 'sample1.txt', lastModifydAt: '1 min ago' },
-                { type: 'file', name: 'sample2.txt', lastModifydAt: '1 min ago' },
-              ]
-            },
-            { type: 'file', name: 'sample3.txt', lastModifydAt: '1 min ago' },
-          ]
-        }
-      ];
-      for (let i = 1; i <= 100; i++) {
-        data.push({ type: 'file', name: `sample${i}.txt`, lastModifydAt: '1 min ago' })
-      }
-      const update = path => {
-        let items = data;
-        for (let i = 0; i < path.length; i++) {
-          const item = items.find(item => item.name === path[i])
-          if (!item)
-            return;
-          items = item.children || [];
-        }
-        b.path = path;
-        g.items = items.map(item => {
-          item.icon = item.type === 'folder' ? 'fa fa-folder'
-            : item.type === 'file' ? 'fa fa-file-o'
-              : '';
-          return item;
-        });
-        for (let c of document.getElementsByClassName('preview-container')) {
-          c.remove();
-        }
-        for (let _ of a) {
-          _.items = Array.from(new Set(g.checkedItems.concat([g.selectedItem]))).filter(i => i != null).length;
-        }
-      }
-      b.addEventListener('change', e => {
-        update(e.detail.path)
-      });
-      g.addEventListener('change', e => {
-        const items = Array.from(new Set(g.checkedItems.concat([g.selectedItem]))).filter(i => i != null);
-        a.items = items.length;
-      });
-      g.addEventListener('select', e => {
-        if (e.detail.item.type === 'folder' && !e.detail.checkbox) {
-          update(b.path.concat([e.detail.item.name]));
-        }
-      });
-      update([]);
-    }
-    const app = document.querySelector('aiplugs-app');
-
-    initStorage(
-      [document.querySelector('aiplugs-actions')],
-      document.querySelector('aiplugs-breadcrumb'),
-      document.querySelector('aiplugs-grid'));
-
-    window.addEventListener('WebComponentsReady', function () {
-      const dialogExample = document.querySelector('#dialog-example');
-      dialogExample.openDialog = function () {
-        dialogExample.$.dialog.opened = true;
-      };
-      dialogExample.closeDialog = function () {
-        dialogExample.$.dialog.opened = false;
-      };
-
-      const data = [
-        {
-          type: 'folder', name: 'Sample 1', children: [
-            {
-              type: 'folder', name: 'Sample A', children: [
-                { type: 'file', name: 'sample1.txt', lastModifydAt: '1 min ago' },
-                { type: 'file', name: 'sample2.txt', lastModifydAt: '1 min ago' },
-              ]
-            },
-            { type: 'file', name: 'sample3.txt', lastModifydAt: '1 min ago' },
-          ]
-        }
-      ];
-      for (let i = 1; i <= 100; i++) {
-        data.push({ type: 'file', name: `sample${i}.txt`, lastModifydAt: '1 min ago' })
-      }
-      const wysisyg = document.querySelector('aiplugs-wysiwyg');
-      const update = path => {
-        let items = data;
-        for (let i = 0; i < path.length; i++) {
-          const item = items.find(item => item.name === path[i])
-          if (!item)
-            return;
-          items = item.children || [];
-        }
-        wysisyg.$.fileDialog.update(path, items.map(item => {
-          item.icon = item.type === 'folder' ? 'fa fa-folder'
-            : item.type === 'file' ? 'fa fa-file-o'
-              : '';
-          return item;
-        }));
-      }
-      wysisyg.$.fileDialog.addEventListener('change', ev => {
-        const path = ev.detail.path;
-        update(path);
-      });
-      wysisyg.$.fileDialog.addEventListener('select', ev => {
-        const path = ev.detail.path;
-        wysisyg.insertImage('https://user-images.githubusercontent.com/1011232/36073986-ab312362-0f7c-11e8-942d-be1e30f96f82.png', 'sample', 'sample');
-      });
-    });
-  </script>
 </body>
 
 </html>

@@ -188,12 +188,10 @@
             value: ''
           },
           patternKey: {
-            type: String,
-            value: ''
+            type: String
           },
           patternValue: {
-            type: String,
-            value: ''
+            type: String
           },
           description: {
             type: String,
@@ -258,7 +256,8 @@
       _validation(e) {
         this._debouncer = Polymer.Debouncer.debounce(this._debouncer, Polymer.Async.timeOut.after(500), () => {
           let invalid = false;
-          if (!e.target.validity.valid) {
+          const input = e.path[0];
+          if (!input.validity.valid) {
             input.setAttribute('invalid', 'invalid');
             invalid = true;
           }

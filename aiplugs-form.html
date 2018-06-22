@@ -3,7 +3,13 @@
 <script src="https://unpkg.com/json-schema-ref-parser@4.0.3/dist/ref-parser.min.js"></script>
 <dom-module id="aiplugs-form">
   <template>
-    <dom-bind id="container"></dom-bind>
+    <style>
+      main > * {
+        padding-bottom: 24px;
+      }
+    </style>
+    <main id="container">
+    </main>
   </template>
   <script>
     class AiplugsForm extends Polymer.Element {
@@ -11,11 +17,12 @@
       static get properties() {
         return {
           schema: String,
-          data: Object,
-          _schema: {
-            type: Object,
-          }
+          value: Object
         };
+      }
+      ready() {
+        super.ready();
+        this._init(this.schema);
       }
       _parseSchema(schemaUrl) {
         return $RefParser.parse(schemaUrl).then(schema => {
@@ -30,30 +37,282 @@
       }
       _init(schemaUrl) {
         this._parseSchema(schemaUrl).then(schema => {
-          const html = this._render(schema, this.data);
-          const template = document.createElement('template');
-          template.insertAdjacentHTML('beforeend', html);
-          this.$.container.appendChild(template);
+          this.$.container.innerHTML = this._render(schema, this.value);
         });
       }
-      _render(schema, data, name, required) {
+      _render(schema, data, name, required, nested, prefix) {
         name = name || '';
-        params = params || {};
-        if (schema.type === 'object') {
-          if (false) {
-            
+        const type = schema.type;
+        const input = Object.assign({ type: 'text' }, schema.input || {}).type;
+        if (type === 'object' || schema.properties) {
+          const patternProperties = schema.patternProperties || {};
+          const patternPropertiesKeys = Object.keys(patternProperties);
+          const dictionary = patternPropertiesKeys.length > 0 && !patternPropertiesKeys.find(key => patternProperties[key].type !== 'string');
+          if (dictionary) {
+            return this._renderDictionary(schema, data, name, required);
           }
           else {
-            return this._renderObject(schema, data, name, params);
+            const _name = [(prefix || ''), name].filter(n => n !== '').join('.');
+            return this._renderObject(schema, data || {}, _name, nested);
           }
         }
+        if (type === 'array') {
+          if (Array.isArray(schema.enum)) {
+            return this._renderSelect(schema, data, name, required, nested, true);
+          }
+          if (input === 'tag' ) {
+            return this._renderTag(schema, data, name, required, nested);
+          }
+          return this._renderArray(schema, data, name, required, nested);
+        }
+        if (type === 'string' && input === 'textarea') {
+          return this._renderTextArea(schema, data, name, required, nested);
+        }
+        if (type === 'string' && input === 'code') {
+          return this._renderCode(schema, data, name, required, nested)
+        }
+        if (type === 'string' && input === 'wysiwyg') {
+          return this._renderWysiwyg(schema, data, name, required, nested);
+        }
+        if (Array.isArray(schema.enum)) {
+          return this._renderSelect(schema, data, name, required, nested, false);
+        }
+        if (type === 'string') {
+          return this._renderText(schema, data, name, required, nested);
+        }
+        if (type === 'number' || type === 'integer') {
+          return this._renderNumber(schema, data, name, required, nested);
+        }
+        if (type === 'boolean') {
+          return this._renderCheckbox(schema, data, name, nested);
+        }
+
+        return '';
       }
-      _renderObject(schema, data, name) {
+      _escape(text) {
+        return (text||'').replace(/[&'`"<>]/g, match => ({
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;',
+        }[match]));
+      }
+      _parseName(name) {
+        const n = name.split('.');
+        return n[n.length - 1];
+      }
+      _renderObject(schema, data, name, nested) {
         return Object.keys(schema.properties).map(key => {
           const _name = [name, key].filter(n => n !== '').join('.');
           const _required = !!(schema.required || []).find(k => k === key);
-          return this._render(schema, data[key], _name, _required);
-        }).join();
+          return this._render(schema.properties[key], data[key], _name, _required, nested);
+        }).join('');
+      }
+      _renderTextArea(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && typeof schema.default === 'string')
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(data);
+        return `<aiplugs-textarea name="${name}" value="${value}" label="${schema.title||''}" description="${schema.description||''}" ${required?'required':''}></aiplugs-textarea>`;
+      }
+      _renderCode(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && typeof schema.default === 'string')
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(data);
+        const input = Object.assign({ monaco: {} }, schema.input || {});
+        const monaco = this._escape(JSON.stringify(input.monaco));
+        const jsonSchema = input.monaco.jsonSchema;
+        return `<aiplugs-code name="${name}" value="${value}" label="${schema.title||''}" description="${schema.description||''}" ${required?'required':''}>
+                  <template>
+                  <aiplugs-blade label="Code" mode="wide" expanded>
+                    <aiplugs-actions>
+                      <vaadin-button theme="small" class="close">Close</vaadin-button>
+                      <vaadin-button theme="small tertiary" class="cancel">Cancel</vaadin-button>
+                    </aiplugs-actions>
+                    <aiplugs-monaco name="${name}" class="main editor" opts='${monaco}' ${jsonSchema ? `jsonschema="${jsonSchema}"`:''}>
+                    </aiplugs-monaco>
+                  </aiplugs-blade>
+                </template>
+                </aiplugs-code>`;
+      }
+      _renderWysiwyg(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && typeof schema.default === 'string')
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(data);
+        const input = Object.assign({ tinymce: {} }, schema.input || {});
+        const tinymce = this._escape(JSON.stringify(input.tinymce));
+        return `<aiplugs-wysiwyg name="${name}" value="${value}" label="${schema.title||''}" description="${schema.description||''}" ${required?'required':''}>
+                    <template>
+                      <aiplugs-blade label="Wysiwyg" mode="wide" expanded>
+                        <aiplugs-actions>
+                          <vaadin-button theme="small" class="close">Close</vaadin-button>
+                          <vaadin-button theme="small tertiary" class="cancel">Cancel</vaadin-button>
+                        </aiplugs-actions>
+                        <aiplugs-tinymce name="${name}" class="main padding-side editor" opts='${tinymce}'>
+                        </aiplugs-tinymce>
+                      </aiplugs-blade>
+                  </template>
+                </aiplugs-wysiwyg>`;
+      }
+      _renderText(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && typeof schema.default === 'string')
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(data);
+        const input = Object.assign({ type: 'text' }, schema.input || {});
+        const unique = schema.unique || false;
+        const autocomplete = input.autocomplete || {};
+        let url, method = {}, paramKey = 'keyword', labelKey = 'label', valueKey = 'value', customHeaders = {};
+        url = (typeof autocomplete === 'string') ? autocomplete : autocomplete.url;
+        method = autocomplete.method || method;
+        paramKey = autocomplete.paramKey || paramKey;
+        labelKey = autocomplete.labelKey || labelKey;
+        valueKey = autocomplete.valueKey || valueKey;
+        customHeaders = autocomplete.customHeaders || customHeaders;
+        return `<aiplugs-input 
+                  type="${input.type}" 
+                  name="${name}" 
+                  value="${value}" 
+                  label="${schema.title||''}"
+                  description="${schema.description||''}"
+                  ${url ? 
+                  `ajax-uri="${url}"
+                  ajax-key="${paramKey}"
+                  ajax-label="${labelKey}"
+                  ajax-value="${valueKey}"
+                  ajax-headers="${JSON.stringify(customHeaders)}"
+                  `:''}
+                  ${required?'required':''}
+                  ${unique?'unique':''}></aiplugs-input>`;
+      }
+      _renderSelect(schema, data, name, required, nested, multiple) {
+        if (typeof data === 'undefined' && (typeof schema.default === 'string' || Array.isArray(schema.default)))
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data));
+        const input = Object.assign({ type: 'select' }, schema.input || {});
+        const labels = schema.enumLabels || {};
+        const options = (schema.enum || []).map(value => ({ label: labels[value] || value, value: value }));
+        const min = schema.minItems;
+        const max = schema.maxItems;
+        return `<aiplugs-select 
+                  type="${input.type}" 
+                  name="${name}" 
+                  value="${value}" 
+                  options='${JSON.stringify(options)}' 
+                  label="${schema.title||''}" 
+                  description="${schema.description||''}" 
+                  ${required?'required':''} 
+                  ${multiple?'multiple':''}
+                  ${multiple&&min?`min="${min}"`:''}
+                  ${multiple&&max?`max="${max}"`:''}></aiplugs-select>`
+      }
+      _renderNumber(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && typeof schema.default === 'number')
+          data = schema.default;
+        
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data||''));
+        const input = Object.assign({ step: 0.01 }, schema.input || {});
+        const step = schema.type === 'integer' ? 1 : input.step;
+        let min = typeof schema.minimum === 'number'  ? schema.minimum : null;
+        let max = typeof schema.maximum === 'number'  ? schema.maximum : null;
+        if (schema.exclusiveMinimum) {
+          min = (min||0) + 1;
+        }
+        if (schema.exclusiveMaximum) {
+          max = (max||Number.MAX_VALUE) - 1;
+        }
+        return `<aiplugs-input
+                  type="number"
+                  name="${name}" 
+                  value="${value}"
+                  label="${schema.title||''}" 
+                  description="${schema.description||''}"
+                  step="${step}"
+                  ${required?'required':''}
+                  ${min!=null?`min="${min}"`:''}
+                  ${max!=null?`max="${max}"`:''}></aiplugs-input>`
+      }
+      _renderCheckbox(schema, data, name, nested, prefix) {
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data||''));
+        return `<aiplugs-checkbox
+                  name="${name}" 
+                  label="${schema.title||''}" 
+                  description="${schema.description||''}"
+                  value="${value}"
+                  ${data?'checked':''}></aiplugs-checkbox>`
+      }
+      _renderTag(schema, data, name, required, nested, prefix) {
+        if (typeof data === 'undefined' && Array.isArray(schema.default))
+          data = schema.default;
+          
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data||[]));
+        const min = schema.minItems || null;
+        const max = schema.maxItems || null;
+        const input = schema.input || {};
+        const unique = schema.unique || false;
+        const autocomplete = input.autocomplete || {};
+        let url, method = {}, paramKey = 'keyword', labelKey = 'label', valueKey = 'value', customHeaders = {};
+        url = (typeof autocomplete === 'string') ? autocomplete : autocomplete.url;
+        method = autocomplete.method || method;
+        paramKey = autocomplete.paramKey || paramKey;
+        labelKey = autocomplete.labelKey || labelKey;
+        valueKey = autocomplete.valueKey || valueKey;
+        customHeaders = autocomplete.customHeaders || customHeaders;
+        return `<aiplugs-tag
+                  name="${name}"
+                  value="${value}"
+                  label="${schema.title||''}" 
+                  description="${schema.description||''}"
+                  ${url ? 
+                  `ajax-uri="${url}"
+                  ajax-key="${paramKey}"
+                  ajax-label="${labelKey}"
+                  ajax-value="${valueKey}"
+                  ajax-headers="${JSON.stringify(customHeaders)}"
+                  `:''}
+                  ${min!=null?`min="${min}"`:''}
+                  ${max!=null?`max="${max}"`:''}
+                  ${required?'required':''}
+                  ${unique?'unique':''}></aiplugs-tag>`
+      }
+      _renderDictionary(schema, data, name, required, nested, prefix) {
+        if (typeof data === 'undefined' && typeof schema.default === 'object')
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data||{}));
+        const patternKey = Object.keys(schema.patternProperties)[0];
+        const patternValue = schema.patternProperties[patternKey].pattern;
+        return `<aiplugs-dictionary
+                  name="${name}"
+                  value="${value}"
+                  label="${schema.title||''}" 
+                  description="${schema.description||''}"
+                  pattern-key="${patternKey}"
+                  ${patternValue?`pattern-value="${patternValue}"`:''}                  
+                  ${required?'required':''}></aiplugs-dictionary>`;       
+      }
+      _renderArray(schema, data, name, required, nested) {
+        if (typeof data === 'undefined' && Array.isArray(schema.default))
+          data = schema.default;
+
+        const value = nested ? `{{item.${this._parseName(name)}}}` : this._escape(JSON.stringify(data||[]));
+        const min = schema.minItems;
+        const max = schema.maxItems;
+        return `<aiplugs-array
+                  value="${value}"
+                  label="${schema.title||''}"
+                  ${min !== undefined? `min="${min}"` : ''}
+                  ${max !== undefined? `max="${max}"` : ''}
+                  description="${schema.description||''}">
+                    <template>
+                      ${this._render(schema.items, '', '', false, true, name + '[]')}
+                    </template>
+                  </aiplugs-array>`;
       }
     }
 

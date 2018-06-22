@@ -2,127 +2,229 @@
   "$schema": "http://schemas.aiplugs.com/cms/2017-10-16/root.json#",
   "type":  "object",
   "properties": {
-    "username": {
-      "title": "Username",
-      "description": "You can input any name with up to 20 single-byte alphanumeric characters and underscores. ",
+    "normaltext": {
+      "title": "Normal Text",
       "type": "string",
-      "pattern": "^[_a-zA-Z0-9]{0,20}$"
+      "default": "default value"
     },
-    "email": {
-      "title": "Email",
+    "patterntext": {
+      "title": "Pattern Text",
       "type": "string",
-      "input": { "type": "email" }
+      "pattern": "^[a-z]$"
     },
-    "name": {
-      "title": "Name",
-      "type": "string"
-    },
-    "birthday": {
-      "title": "Date of Birth",
+    "restrictiontext": {
+      "title": "Restriction Text",
       "type": "string",
-      "input": { "type": "date" }
+      "minLength": 3,
+      "maxLength": 10
     },
-    "sex": {
-      "title": "Sex",
-      "type": "string",
-      "enum": [ "Male", "Female" ]
-    },
-    "language": {
-      "title": "Language",
-      "type": "string",
-      "enum": [ "English", "Deutsch", "French", "Arabic", "Hebrew", "Chinese", "Cantonese", "Korean", "Thai", "Japanese" ],
-      "enumLabels": {
-        "French": "Français",
-        "Arabic": "اللغة العربية",
-        "Hebrew": "עברית‎",
-        "Chinese": "官话",
-        "Cantonese": "广东话",
-        "Korean": "한국어",
-        "Thai": "ภาษาไทย",
-        "Japanese": "日本語"        
-      }
-    },
-    "height": {
-      "title": "Height[cm]",
-      "type": "integer",
-      "minimum": 0,
-      "exclusiveMinimum": true,
-      "maximum": 300
-    },
-    "weight": {
-      "title": "Weight[kg]",
-      "type": "number",
-      "minimum": 0
-    },
-    "city": {
-      "title": "Desirable Place to Work",
+    "multilinetext": {
+      "title": "Multi Line Text",
       "type": "string",
       "input": {
-        "type": "autocomplete",
+        "type": "textarea"
+      },
+      "default": "Multi Line Text\nMulti Line Text"
+    },
+    "integer": {
+      "title": "Integer",
+      "type": "number",
+      "input": {
+        "step": 1
+      },
+      "default": 100
+    },
+    "unsignedInt": {
+      "title": "Unsigned Integer",
+      "type": "number",
+      "minimum": 0,
+      "input": {
+        "step": 1
+      }
+    },
+    "double": {
+      "title": "Double",
+      "type": "number",
+      "input": {
+        "step": 0.01
+      }
+    },
+    "unsignedDouble": {
+      "title": "Unsigned Double",
+      "type": "number",
+      "minimum": 0,
+      "input": {
+        "step": 0.01
+      }
+    },
+    "date": {
+      "title": "Date",
+      "type": "string",
+      "input": {
+        "type": "date"
+      }
+    },
+    "datetime": {
+      "title": "Date Time",
+      "type": "string",
+      "input": {
+        "type": "datetime-local"
+      }
+    },
+    "boolean": {
+      "title": "Boolean",
+      "type":"boolean",
+      "default": true
+    },
+    "select": {
+      "title": "Selection",
+      "type": "string",
+      "enum": ["1", "2"],
+      "enumLabels": {
+        "1": "Option 1",
+        "2": "Option 2"
+      },
+      "input": {
+        "type": "select"
+      },
+      "default": "2"
+    },
+    "radio": {
+      "title": "Radio",
+      "type": "string",
+      "enum": ["1", "2"],
+      "enumLabels": {
+        "1": "Option 1",
+        "2": "Option 2"
+      },
+      "input": {
+        "type": "radio"
+      },
+      "default": "2"
+    },
+    "checkbox": {
+      "title": "Checkbox",
+      "type": "array",
+      "enum": ["1", "2", "3"],
+      "enumLabels": {
+        "1": "Option 1",
+        "2": "Option 2",
+        "3": "Option 3"
+      },
+      "input": {
+        "type": "checkbox"
+      },
+      "default": ["2", "3"]
+    },
+    "selectMulti": {
+      "title": "Multi Selection",
+      "type": "array",
+      "enum": ["1", "2"],
+      "enumLabels": {
+        "1": "Option 1",
+        "2": "Option 2"
+      },
+      "input": {
+        "type": "select"
+      },
+      "default": ["1", "2"]
+    },
+    "tag": {
+      "title": "Tag",
+      "type": "array",
+      "items": {
+        "type":"string"
+      },
+      "input": {
+        "type": "tag"
+      },
+      "default": ["HTML", "CSS"]
+    },
+    "tagAjax": {
+      "title": "Tag AJAX",
+      "type": "array",
+      "items": {
+        "type":"string"
+      },
+      "input": {
+        "type": "tag",
         "autocomplete": {
-          "url": "/dev/data/cities.json",
-          "paramKey": "hint"
+          "url": "data/skills.json",
+          "labelKey": "text"
         }
-      }
+      },
+      "default": ["csharp", "aspnet"]
     },
-    "skills": {
-      "title": "Skills",
-      "type": "array",
-      "items": {
-        "type": "string",
-        "input": {
-          "type": "autocomplete",
-          "autocomplete": {
-            "url": "/dev/data/skills.json",
-            "paramKey": "hint"
-          }
+    "code": {
+      "title": "Code",
+      "type": "string",
+      "input": {
+        "type": "code",
+        "monaco": {
+          "language": "json",
+          "jsonSchema": "http://json-schema.org/draft-04/schema"
         }
+      },
+      "default": "{\n    \"$schema\":\"http://json-schema.org/draft-04/schema\"\n}"
+    },
+    "wysiwyg": {
+      "title": "Wysiwyg",
+      "type": "string",
+      "input": {
+        "type": "wysiwyg",
+        "tinymce": {
+          "templates": [
+            {
+              "title":"Hello,World!", 
+              "description": "Insert Hello, World", 
+              "content": "<h1>Hello, World!!!</h1>"
+            }
+          ]
+        }
+      },
+      "default": "<h1>Hello, World!!!</h1>"
+    },
+    "dict": {
+      "title": "Dictionary",
+      "type": "object",
+      "patternProperties": {
+        "^[a-z]+$": {
+          "type": "string"
+        }
+      },
+      "default": {
+        "msg": "Hello, World!!!"
       }
     },
-    "hobbies": {
-      "title": "Hobbies",
-      "type": "array",
-      "items": {
-        "type": "string",
-        "input": { "type": "tag" }
-      }
-    },
-    "workExperience": {
-      "title": "Work Experience",
+    "array": {
+      "title": "Array",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "company": {
-            "title": "Company Name",
+          "text": {
+            "title": "Text",
             "type": "string"
           },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "input": {
-              "type": "textarea"
-            },
-            "maxLength": 240
+          "array": {
+            "title": "Nested Array",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "Text",
+                  "type": "string"
+                }
+              }
+            }
           }
         }
-      }
-    },
-    "agreement": {
-      "title": "I agree to terms",
-      "type": "boolean"
-    },
-    "json": {
-      "title": "JSON",
-      "type": "string",
-      "input": {
-        "type": "code",
-        "code": {
-          "json.schema": "http://json-schema.org/draft-04/schema#",
-          "language": "json"
-        }
-      }
+      },
+      "default": [
+        { "text": "Root First" }
+      ]
     }
   },
-  "required": [ "username", "email" ]
+  "required": []
 }
